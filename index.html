@@ -3,454 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图层工坊 · 多图叠放 · 拖拽定位 · 全图预览</title>
+    <title>图层工坊 · 多图叠放 · 拖拽定位 · 全图预览 · 删除图层</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
             background: #f1f5f9;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: flex; justify-content: center; align-items: center;
             padding: 1.5rem;
         }
         .app {
-            max-width: 1200px;
-            width: 100%;
-            background: white;
-            border-radius: 2rem;
+            max-width: 1200px; width: 100%;
+            background: white; border-radius: 2rem;
             box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.2);
             padding: 1.8rem 2rem 2rem 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.8rem;
+            display: flex; flex-direction: column; gap: 1.8rem;
         }
         h1 {
-            font-size: 1.9rem;
-            font-weight: 600;
-            color: #0f172a;
-            letter-spacing: -0.02em;
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
+            font-size: 1.9rem; font-weight: 600; color: #0f172a;
+            letter-spacing: -0.02em; display: flex; align-items: center; gap: 0.6rem;
         }
         h1 span {
-            background: #e2e8f0;
-            font-size: 1rem;
-            font-weight: 500;
-            padding: 0.2rem 0.8rem;
-            border-radius: 99px;
-            color: #334155;
+            background: #e2e8f0; font-size: 1rem; font-weight: 500;
+            padding: 0.2rem 0.8rem; border-radius: 99px; color: #334155;
         }
-        .main-panel {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 2rem;
-        }
-        /* 画布区 */
-        .canvas-area {
-            flex: 2;
-            min-width: 500px;
-            display: flex;
-            flex-direction: column;
-            gap: 0.8rem;
-        }
+        .main-panel { display: flex; flex-wrap: wrap; gap: 2rem; }
+        .canvas-area { flex: 2; min-width: 500px; display: flex; flex-direction: column; gap: 0.8rem; }
         .canvas-wrapper {
-            background: #e9eef3;
-            border-radius: 1.2rem;
-            padding: 1rem;
-            box-shadow: inset 0 2px 8px rgba(0,0,0,0.04);
-            position: relative;
+            background: #e9eef3; border-radius: 1.2rem; padding: 1rem;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.04); position: relative;
         }
         #previewCanvas {
-            display: block;
-            width: 100%;
-            height: auto;
-            max-height: 500px;
-            object-fit: contain;
-            border-radius: 0.8rem;
-            background: #cbd5e1;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            margin: 0 auto;
-            cursor: default;
+            display: block; width: 100%; height: auto; max-height: 500px;
+            object-fit: contain; border-radius: 0.8rem; background: #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin: 0 auto; cursor: default;
         }
-        /* 画布覆盖层提示 */
         .canvas-overlay-tip {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(15, 23, 42, 0.8);
-            color: white;
-            padding: 0.4rem 1.2rem;
-            border-radius: 99px;
-            font-size: 0.8rem;
-            pointer-events: none;
-            backdrop-filter: blur(4px);
-            white-space: nowrap;
-            opacity: 0.9;
-            transition: 0.2s;
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.8); color: white;
+            padding: 0.4rem 1.2rem; border-radius: 99px; font-size: 0.8rem;
+            pointer-events: none; backdrop-filter: blur(4px); white-space: nowrap;
+            opacity: 0.9; transition: 0.2s;
         }
         .layer-controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            background: #f8fafc;
-            padding: 0.8rem 1.2rem;
-            border-radius: 2rem;
-            font-size: 0.95rem;
-            color: #1e293b;
-            border: 1px solid #d1d9e6;
+            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+            gap: 1rem; background: #f8fafc; padding: 0.8rem 1.2rem; border-radius: 2rem;
+            font-size: 0.95rem; color: #1e293b; border: 1px solid #d1d9e6;
         }
-        .opacity-group {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            flex-wrap: wrap;
-        }
-        .opacity-group label {
-            font-weight: 500;
-            color: #0f172a;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
+        .opacity-group { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
+        .opacity-group label { font-weight: 500; color: #0f172a; display: flex; align-items: center; gap: 0.4rem; }
         input[type="range"] {
-            width: 140px;
-            height: 6px;
-            -webkit-appearance: none;
-            background: #cbd5e1;
-            border-radius: 99px;
-            outline: none;
+            width: 140px; height: 6px; -webkit-appearance: none;
+            background: #cbd5e1; border-radius: 99px; outline: none;
         }
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #3b82f6;
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(59,130,246,0.4);
-            border: 2px solid white;
-            transition: 0.1s;
+            -webkit-appearance: none; width: 20px; height: 20px;
+            background: #3b82f6; border-radius: 50%; cursor: pointer;
+            box-shadow: 0 2px 8px rgba(59,130,246,0.4); border: 2px solid white; transition: 0.1s;
         }
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.15);
-            background: #2563eb;
-        }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); background: #2563eb; }
         .opacity-value {
-            font-weight: 600;
-            color: #0f172a;
-            min-width: 48px;
-            text-align: right;
+            font-weight: 600; color: #0f172a; min-width: 48px; text-align: right;
             font-variant-numeric: tabular-nums;
         }
-        .action-buttons {
-            display: flex;
-            gap: 0.6rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+        .action-buttons { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
         .lock-btn, .preview-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: white;
-            border: 1px solid #d1d9e6;
-            padding: 0.5rem 1.2rem;
-            border-radius: 2rem;
-            font-weight: 500;
-            color: #1e293b;
-            cursor: pointer;
-            transition: 0.15s;
-            font-size: 0.9rem;
-            user-select: none;
+            display: flex; align-items: center; gap: 0.5rem;
+            background: white; border: 1px solid #d1d9e6;
+            padding: 0.5rem 1.2rem; border-radius: 2rem;
+            font-weight: 500; color: #1e293b; cursor: pointer;
+            transition: 0.15s; font-size: 0.9rem; user-select: none;
         }
-        .lock-btn.active {
-            background: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-        }
-        .lock-btn.active .lock-icon {
-            filter: brightness(0) invert(1);
-        }
-        .preview-btn {
-            background: #3b82f6;
-            color: white;
-            border-color: #3b82f6;
-        }
-        .preview-btn:hover {
-            background: #2563eb;
-        }
-        /* 右侧控制区 */
-        .sidebar {
-            flex: 1;
-            min-width: 280px;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
+        .lock-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+        .lock-btn.active .lock-icon { filter: brightness(0) invert(1); }
+        .preview-btn { background: #3b82f6; color: white; border-color: #3b82f6; }
+        .preview-btn:hover { background: #2563eb; }
+        .sidebar { flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 1.5rem; }
         .upload-section {
-            background: #f8fafc;
-            border-radius: 1.4rem;
-            padding: 1.4rem 1.2rem;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.02);
+            background: #f8fafc; border-radius: 1.4rem; padding: 1.4rem 1.2rem;
+            border: 1px solid #e2e8f0; box-shadow: 0 6px 14px rgba(0,0,0,0.02);
         }
         .upload-section h2 {
-            font-size: 1.15rem;
-            font-weight: 600;
-            color: #0f172a;
-            margin-bottom: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            font-size: 1.15rem; font-weight: 600; color: #0f172a;
+            margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem;
         }
         .upload-btn {
-            display: block;
-            width: 100%;
-            padding: 0.9rem 1rem;
-            border-radius: 1rem;
-            background: white;
-            border: 2px dashed #b9c7da;
-            font-weight: 500;
-            color: #1e293b;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.2s;
-            margin-bottom: 1rem;
-            font-size: 0.95rem;
+            display: block; width: 100%; padding: 0.9rem 1rem; border-radius: 1rem;
+            background: white; border: 2px dashed #b9c7da; font-weight: 500; color: #1e293b;
+            text-align: center; cursor: pointer; transition: 0.2s; margin-bottom: 1rem; font-size: 0.95rem;
         }
-        .upload-btn:hover {
-            background: #eff6ff;
-            border-color: #3b82f6;
-            color: #1e40af;
-        }
-        .upload-btn input {
-            display: none;
-        }
-        .uploaded-tag {
-            background: #dbeafe;
-            padding: 0.4rem 1rem;
-            border-radius: 99px;
-            font-size: 0.85rem;
-            color: #1e40af;
-            font-weight: 500;
-            display: inline-block;
-            margin-top: 0.4rem;
-        }
+        .upload-btn:hover { background: #eff6ff; border-color: #3b82f6; color: #1e40af; }
+        .upload-btn input { display: none; }
         .layer-list {
-            background: #f8fafc;
-            border-radius: 1.4rem;
-            padding: 1.2rem 1rem;
-            border: 1px solid #e2e8f0;
-            flex: 1;
+            background: #f8fafc; border-radius: 1.4rem; padding: 1.2rem 1rem;
+            border: 1px solid #e2e8f0; flex: 1;
         }
         .layer-list h3 {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #334155;
-            margin-bottom: 0.8rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            font-size: 1rem; font-weight: 600; color: #334155; margin-bottom: 0.8rem;
+            display: flex; justify-content: space-between; align-items: center;
         }
         .layer-item {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.7rem 0.8rem;
-            background: white;
-            border-radius: 1rem;
-            margin-bottom: 0.5rem;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-            border: 1px solid #e9eef3;
-            cursor: grab;
-            transition: 0.15s;
-            user-select: none;
+            display: flex; align-items: center; gap: 0.6rem; padding: 0.7rem 0.8rem;
+            background: white; border-radius: 1rem; margin-bottom: 0.5rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02); border: 1px solid #e9eef3;
+            cursor: grab; transition: 0.15s; user-select: none;
         }
-        .layer-item:active {
-            cursor: grabbing;
-        }
-        .layer-item.dragging {
-            opacity: 0.5;
-            border: 2px dashed #3b82f6;
-        }
-        .layer-item .drag-handle {
-            font-size: 1.2rem;
-            color: #94a3b8;
-            cursor: grab;
-            line-height: 1;
-        }
+        .layer-item:active { cursor: grabbing; }
+        .layer-item.dragging { opacity: 0.5; border: 2px dashed #3b82f6; }
+        .layer-item .drag-handle { font-size: 1.2rem; color: #94a3b8; cursor: grab; line-height: 1; }
         .layer-item .layer-name {
-            flex: 1;
-            font-weight: 500;
-            color: #0f172a;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            flex: 1; font-weight: 500; color: #0f172a; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 0.3rem;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
         .layer-item .layer-name .badge {
-            background: #e2e8f0;
-            font-size: 0.65rem;
-            padding: 0.15rem 0.5rem;
-            border-radius: 99px;
-            color: #334155;
-            font-weight: 500;
-            flex-shrink: 0;
+            background: #e2e8f0; font-size: 0.65rem; padding: 0.15rem 0.5rem;
+            border-radius: 99px; color: #334155; font-weight: 500; flex-shrink: 0;
         }
         .layer-item .index-badge {
-            background: #f1f5f9;
-            color: #475569;
-            font-size: 0.7rem;
-            padding: 0.2rem 0.6rem;
-            border-radius: 99px;
-            font-weight: 600;
+            background: #f1f5f9; color: #475569; font-size: 0.7rem;
+            padding: 0.2rem 0.6rem; border-radius: 99px; font-weight: 600;
         }
         .layer-item .select-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #cbd5e1;
-            flex-shrink: 0;
+            width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0;
         }
         .layer-item.selected .select-indicator {
-            background: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
+            background: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
         }
-        .layer-item.selected {
-            border-color: #3b82f6;
-            background: #eff6ff;
+        .layer-item.selected { border-color: #3b82f6; background: #eff6ff; }
+        /* 删除按钮 */
+        .layer-item .delete-btn {
+            background: transparent; border: none; color: #94a3b8;
+            font-size: 1.1rem; cursor: pointer; padding: 0 0.2rem;
+            border-radius: 50%; transition: 0.15s;
+            display: flex; align-items: center; justify-content: center;
+            width: 24px; height: 24px; flex-shrink: 0;
         }
-        .empty-layer-msg {
-            text-align: center;
-            color: #64748b;
-            font-size: 0.9rem;
-            padding: 1rem 0;
+        .layer-item .delete-btn:hover {
+            background: #fee2e2; color: #dc2626;
         }
+        .empty-layer-msg { text-align: center; color: #64748b; font-size: 0.9rem; padding: 1rem 0; }
         .reset-btn {
-            background: #f1f5f9;
-            border: none;
-            border-radius: 1rem;
-            padding: 0.7rem 1rem;
-            font-weight: 500;
-            color: #334155;
-            cursor: pointer;
-            transition: 0.15s;
-            font-size: 0.9rem;
-            margin-top: 0.8rem;
-            width: 100%;
-            border: 1px solid #e2e8f0;
+            background: #f1f5f9; border: none; border-radius: 1rem; padding: 0.7rem 1rem;
+            font-weight: 500; color: #334155; cursor: pointer; transition: 0.15s;
+            font-size: 0.9rem; margin-top: 0.8rem; width: 100%; border: 1px solid #e2e8f0;
         }
-        .reset-btn:hover {
-            background: #e2e8f0;
-            color: #0f172a;
-        }
-        .note {
-            font-size: 0.8rem;
-            color: #64748b;
-            text-align: center;
-            margin-top: 0.5rem;
-        }
+        .reset-btn:hover { background: #e2e8f0; color: #0f172a; }
+        .note { font-size: 0.8rem; color: #64748b; text-align: center; margin-top: 0.5rem; }
 
-        /* ---------- 全图预览模态框 ---------- */
         .preview-modal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(12px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-            animation: fadeIn 0.2s ease;
+            display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px); z-index: 1000; justify-content: center; align-items: center;
+            padding: 2rem; animation: fadeIn 0.2s ease;
         }
-        .preview-modal.active {
-            display: flex;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+        .preview-modal.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .preview-content {
-            position: relative;
-            max-width: 90vw;
-            max-height: 90vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1.2rem;
+            position: relative; max-width: 90vw; max-height: 90vh;
+            display: flex; flex-direction: column; align-items: center; gap: 1.2rem;
         }
         .preview-content canvas {
-            display: block;
-            max-width: 90vw;
-            max-height: 80vh;
-            width: auto;
-            height: auto;
-            border-radius: 1rem;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-            background: #1e293b;
-            border: 2px solid rgba(255, 255, 255, 0.15);
+            display: block; max-width: 90vw; max-height: 80vh; width: auto; height: auto;
+            border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            background: #1e293b; border: 2px solid rgba(255, 255, 255, 0.15);
         }
         .preview-toolbar {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(8px);
-            padding: 0.6rem 1.2rem;
-            border-radius: 2rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex; gap: 1rem; align-items: center;
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(8px);
+            padding: 0.6rem 1.2rem; border-radius: 2rem; border: 1px solid rgba(255, 255, 255, 0.2);
         }
         .preview-toolbar button {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 0.95rem;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.4rem 1rem;
-            border-radius: 2rem;
-            transition: 0.15s;
-            font-family: inherit;
+            background: none; border: none; color: white; font-size: 0.95rem;
+            font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;
+            padding: 0.4rem 1rem; border-radius: 2rem; transition: 0.15s; font-family: inherit;
         }
-        .preview-toolbar button:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-        .preview-toolbar button.close-btn {
-            background: rgba(239, 68, 68, 0.8);
-            color: white;
-        }
-        .preview-toolbar button.close-btn:hover {
-            background: rgba(239, 68, 68, 1);
-        }
-        .preview-hint {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 0.8rem;
-            margin-top: 0.3rem;
-        }
+        .preview-toolbar button:hover { background: rgba(255, 255, 255, 0.15); }
+        .preview-toolbar button.close-btn { background: rgba(239, 68, 68, 0.8); color: white; }
+        .preview-toolbar button.close-btn:hover { background: rgba(239, 68, 68, 1); }
+        .preview-hint { color: rgba(255, 255, 255, 0.7); font-size: 0.8rem; margin-top: 0.3rem; }
     </style>
 </head>
 <body>
     <div class="app">
-        <h1>🖼️ 图层工坊 <span>多图叠放 · 拖拽定位 · 独立透明度 · 全图预览</span></h1>
+        <h1>🖼️ 图层工坊 <span>多图叠放 · 拖拽定位 · 全图预览 · 删除图层</span></h1>
         <div class="main-panel">
-            <!-- 画布区 -->
             <div class="canvas-area">
                 <div class="canvas-wrapper" id="canvasWrapper">
                     <canvas id="previewCanvas" width="800" height="600"></canvas>
@@ -469,14 +206,11 @@
                         <button class="lock-btn" id="lockToggleBtn">
                             <span class="lock-icon" id="lockIcon">🔓</span> 解锁图层
                         </button>
-                        <button class="preview-btn" id="openPreviewBtn">
-                            👁️ 全图预览
-                        </button>
+                        <button class="preview-btn" id="openPreviewBtn">👁️ 全图预览</button>
                     </div>
                 </div>
             </div>
 
-            <!-- 右侧侧边栏 -->
             <div class="sidebar">
                 <div class="upload-section">
                     <h2>📤 上传图片</h2>
@@ -492,27 +226,22 @@
                 </div>
 
                 <div class="layer-list">
-                    <h3>
-                        图层顺序
-                        <span class="index-badge" style="font-size:0.7rem;">上 → 下</span>
-                    </h3>
-                    <div id="layerListContainer">
-                        <!-- 动态渲染图层条目 -->
-                    </div>
+                    <h3>图层顺序 <span class="index-badge" style="font-size:0.7rem;">上 → 下</span></h3>
+                    <div id="layerListContainer"></div>
                     <button class="reset-btn" id="resetBtn">↺ 重置所有图层</button>
                 </div>
-                <div class="note">拖动图层条目重新排序 · 点击图层选中以拖拽画布</div>
+                <div class="note">拖动图层条目重新排序 · 点击图层选中以拖拽画布 · 点击 🗑️ 删除</div>
             </div>
         </div>
     </div>
 
-    <!-- 全图预览模态框 -->
     <div class="preview-modal" id="previewModal">
         <div class="preview-content">
             <canvas id="fullPreviewCanvas"></canvas>
             <div class="preview-toolbar">
                 <button id="closePreviewBtn" class="close-btn">✕ 关闭</button>
                 <button id="downloadPreviewBtn">⬇️ 下载图片</button>
+                <button id="copyPreviewBtn">📋 复制图片</button>
             </div>
             <div class="preview-hint">全尺寸预览 · 按 ESC 关闭</div>
         </div>
@@ -520,7 +249,6 @@
 
     <script>
         (function(){
-            // ---------- 画布 & 图层数据 ----------
             const canvas = document.getElementById('previewCanvas');
             const ctx = canvas.getContext('2d');
             const bgOpacitySlider = document.getElementById('bgOpacitySlider');
@@ -528,7 +256,6 @@
             const fgOpacitySlider = document.getElementById('fgOpacitySlider');
             const fgOpacityValue = document.getElementById('fgOpacityValue');
             const lockToggleBtn = document.getElementById('lockToggleBtn');
-            const lockIcon = document.getElementById('lockIcon');
             const canvasTip = document.getElementById('canvasTip');
             const previewModal = document.getElementById('previewModal');
             const fullPreviewCanvas = document.getElementById('fullPreviewCanvas');
@@ -540,74 +267,41 @@
             fullPreviewCanvas.width = CANVAS_W;
             fullPreviewCanvas.height = CANVAS_H;
 
-            // 图层数据
             let layers = [];
             let layerIdCounter = 0;
             let selectedLayerId = null;
             let isLocked = false;
 
-            // ---------- 渲染到指定canvas（用于预览和主画布） ----------
-            function renderToContext(targetCtx, targetCanvas, showSelection = true) {
-                const W = targetCanvas.width;
-                const H = targetCanvas.height;
-                targetCtx.clearRect(0, 0, W, H);
+            // ---------- 核心绘制函数：严格按 背景层(数组顺序) → 前景层(数组顺序) 绘制 ----------
+            function drawAllLayersToCtx(targetCtx, targetW, targetH, includeSelection = false) {
+                targetCtx.clearRect(0, 0, targetW, targetH);
 
                 if (layers.length === 0) {
                     targetCtx.fillStyle = '#cbd5e1';
-                    targetCtx.fillRect(0, 0, W, H);
+                    targetCtx.fillRect(0, 0, targetW, targetH);
                     targetCtx.font = 'bold 26px system-ui, sans-serif';
                     targetCtx.fillStyle = '#475569';
                     targetCtx.textAlign = 'center';
                     targetCtx.textBaseline = 'middle';
-                    targetCtx.fillText('请上传背景和前景图片', W/2, H/2);
+                    targetCtx.fillText('请上传背景和前景图片', targetW/2, targetH/2);
                     return;
                 }
 
-                // 绘制所有图层
-                for (let i = 0; i < layers.length; i++) {
-                    const layer = layers[i];
-                    if (!layer.img) continue;
-                    targetCtx.save();
-                    targetCtx.globalAlpha = layer.opacity;
-                    // 缩放因子（主画布和预览画布尺寸一致，如果将来尺寸不同可适配）
-                    const scaleX = W / CANVAS_W;
-                    const scaleY = H / CANVAS_H;
-                    if (layer.width && layer.height) {
-                        targetCtx.drawImage(layer.img,
-                            layer.x * scaleX, layer.y * scaleY,
-                            layer.width * scaleX, layer.height * scaleY);
-                    } else {
-                        // 后备
-                        const img = layer.img;
-                        const canvasRatio = W / H;
-                        const imgRatio = img.width / img.height;
-                        let drawW, drawH, offsetX, offsetY;
-                        if (imgRatio > canvasRatio) {
-                            drawH = H;
-                            drawW = img.width * (H / img.height);
-                            offsetX = (W - drawW) / 2;
-                            offsetY = 0;
-                        } else {
-                            drawW = W;
-                            drawH = img.height * (W / img.width);
-                            offsetX = 0;
-                            offsetY = (H - drawH) / 2;
-                        }
-                        layer.x = offsetX;
-                        layer.y = offsetY;
-                        layer.width = drawW;
-                        layer.height = drawH;
-                        targetCtx.drawImage(img, offsetX, offsetY, drawW, drawH);
-                    }
-                    targetCtx.restore();
+                const bgLayers = layers.filter(l => l.type === 'background');
+                const fgLayers = layers.filter(l => l.type === 'foreground');
+
+                for (const layer of bgLayers) {
+                    drawSingleLayer(targetCtx, layer, targetW, targetH);
+                }
+                for (const layer of fgLayers) {
+                    drawSingleLayer(targetCtx, layer, targetW, targetH);
                 }
 
-                // 主画布上绘制选中轮廓（预览不显示）
-                if (showSelection && selectedLayerId && !isLocked) {
+                if (includeSelection && selectedLayerId && !isLocked) {
                     const sel = layers.find(l => l.id === selectedLayerId);
                     if (sel && sel.width) {
-                        const scaleX = W / CANVAS_W;
-                        const scaleY = H / CANVAS_H;
+                        const scaleX = targetW / CANVAS_W;
+                        const scaleY = targetH / CANVAS_H;
                         targetCtx.save();
                         targetCtx.strokeStyle = '#3b82f6';
                         targetCtx.lineWidth = 3;
@@ -618,26 +312,73 @@
                 }
             }
 
-            // 渲染主画布
+            function drawSingleLayer(targetCtx, layer, targetW, targetH) {
+                if (!layer.img) return;
+                targetCtx.save();
+                targetCtx.globalAlpha = layer.opacity;
+                const scaleX = targetW / CANVAS_W;
+                const scaleY = targetH / CANVAS_H;
+                if (layer.width && layer.height) {
+                    targetCtx.drawImage(layer.img,
+                        layer.x * scaleX, layer.y * scaleY,
+                        layer.width * scaleX, layer.height * scaleY);
+                } else {
+                    const img = layer.img;
+                    const canvasRatio = targetW / targetH;
+                    const imgRatio = img.width / img.height;
+                    let drawW, drawH, offsetX, offsetY;
+                    if (imgRatio > canvasRatio) {
+                        drawH = targetH;
+                        drawW = img.width * (targetH / img.height);
+                        offsetX = (targetW - drawW) / 2;
+                        offsetY = 0;
+                    } else {
+                        drawW = targetW;
+                        drawH = img.height * (targetW / img.width);
+                        offsetX = 0;
+                        offsetY = (targetH - drawH) / 2;
+                    }
+                    layer.x = offsetX;
+                    layer.y = offsetY;
+                    layer.width = drawW;
+                    layer.height = drawH;
+                    targetCtx.drawImage(img, offsetX, offsetY, drawW, drawH);
+                }
+                targetCtx.restore();
+            }
+
             function renderCanvas() {
-                renderToContext(ctx, canvas, true);
+                drawAllLayersToCtx(ctx, CANVAS_W, CANVAS_H, true);
             }
 
-            // 渲染全图预览
             function renderFullPreview() {
-                renderToContext(fullPreviewCanvas.getContext('2d'), fullPreviewCanvas, false);
+                drawAllLayersToCtx(fullPreviewCanvas.getContext('2d'), CANVAS_W, CANVAS_H, false);
             }
 
-            // ---------- 更新图层列表UI ----------
+            // ---------- 删除图层 ----------
+            function deleteLayer(layerId) {
+                const index = layers.findIndex(l => l.id === layerId);
+                if (index === -1) return;
+                layers.splice(index, 1);
+                // 如果删除的是当前选中的，取消选中
+                if (selectedLayerId === layerId) {
+                    selectedLayerId = null;
+                }
+                renderLayerList();
+                renderCanvas();
+                if (previewModal.classList.contains('active')) renderFullPreview();
+                // 更新上传状态提示
+                document.getElementById('uploadedStatus').textContent = layers.length === 0 ? '' : `当前共 ${layers.length} 个图层`;
+            }
+
+            // ---------- 图层列表 ----------
             function renderLayerList() {
                 const container = document.getElementById('layerListContainer');
                 if (!container) return;
-
                 if (layers.length === 0) {
                     container.innerHTML = `<div class="empty-layer-msg">暂无图层，请上传图片</div>`;
                     return;
                 }
-
                 const reversed = [...layers].reverse();
                 let html = '';
                 reversed.forEach((layer) => {
@@ -654,15 +395,18 @@
                                 <span class="badge">${typeName}</span>
                             </div>
                             <span class="index-badge">${opacityPercent}%</span>
+                            <button class="delete-btn" data-delete-id="${layer.id}" title="删除此图层">🗑️</button>
                         </div>
                     `;
                 });
                 container.innerHTML = html;
 
+                // 绑定点击事件（选中）
                 document.querySelectorAll('.layer-item').forEach(item => {
                     item.addEventListener('click', (e) => {
-                        const id = item.dataset.layerId;
-                        selectedLayerId = id;
+                        // 如果点击的是删除按钮，不触发选中
+                        if (e.target.closest('.delete-btn')) return;
+                        selectedLayerId = item.dataset.layerId;
                         renderLayerList();
                         renderCanvas();
                         canvasTip.textContent = isLocked ? '🔒 已锁定，解锁后可拖拽' : '🔓 拖拽画布中的图片可调整位置';
@@ -674,89 +418,73 @@
                     item.addEventListener('dragleave', handleDragLeave);
                     item.addEventListener('drop', handleDrop);
                 });
+
+                // 绑定删除按钮事件
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation(); // 阻止触发选中
+                        const layerId = btn.dataset.deleteId;
+                        if (layerId) deleteLayer(layerId);
+                    });
+                });
             }
 
-            // ---------- 拖拽排序逻辑 ----------
+            // 拖拽排序
             let dragSourceId = null;
-
             function handleDragStart(e) {
                 const item = e.target.closest('.layer-item');
                 if (!item) return;
+                // 如果从删除按钮开始拖拽，则忽略
+                if (e.target.closest('.delete-btn')) {
+                    e.preventDefault();
+                    return;
+                }
                 dragSourceId = item.dataset.layerId;
                 item.classList.add('dragging');
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', dragSourceId);
             }
-
             function handleDragEnd(e) {
                 const item = e.target.closest('.layer-item');
                 if (item) item.classList.remove('dragging');
                 document.querySelectorAll('.layer-item').forEach(el => el.classList.remove('drag-over'));
                 dragSourceId = null;
             }
-
-            function handleDragOver(e) {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-            }
-
-            function handleDragEnter(e) {
-                const item = e.target.closest('.layer-item');
-                if (!item) return;
-                item.classList.add('drag-over');
-            }
-
-            function handleDragLeave(e) {
-                const item = e.target.closest('.layer-item');
-                if (!item) return;
-                item.classList.remove('drag-over');
-            }
-
+            function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+            function handleDragEnter(e) { const item = e.target.closest('.layer-item'); if (item) item.classList.add('drag-over'); }
+            function handleDragLeave(e) { const item = e.target.closest('.layer-item'); if (item) item.classList.remove('drag-over'); }
             function handleDrop(e) {
                 e.preventDefault();
                 const targetItem = e.target.closest('.layer-item');
                 if (!targetItem) return;
                 targetItem.classList.remove('drag-over');
-
                 const sourceId = dragSourceId;
                 const targetId = targetItem.dataset.layerId;
                 if (!sourceId || !targetId || sourceId === targetId) return;
-
                 const sourceIndex = layers.findIndex(l => l.id === sourceId);
                 const targetIndex = layers.findIndex(l => l.id === targetId);
                 if (sourceIndex === -1 || targetIndex === -1) return;
-
                 [layers[sourceIndex], layers[targetIndex]] = [layers[targetIndex], layers[sourceIndex]];
                 renderLayerList();
                 renderCanvas();
-                // 如果预览打开，也更新预览
-                if (previewModal.classList.contains('active')) {
-                    renderFullPreview();
-                }
+                if (previewModal.classList.contains('active')) renderFullPreview();
             }
 
-            // ---------- 根据透明度滑块更新图层透明度 ----------
+            // 透明度滑块
             function updateOpacityFromSlider() {
                 const bgVal = parseInt(bgOpacitySlider.value, 10) / 100;
                 const fgVal = parseInt(fgOpacitySlider.value, 10) / 100;
                 bgOpacityValue.textContent = `${Math.round(bgVal*100)}%`;
                 fgOpacityValue.textContent = `${Math.round(fgVal*100)}%`;
-
                 layers.forEach(layer => {
-                    if (layer.type === 'background') {
-                        layer.opacity = bgVal;
-                    } else {
-                        layer.opacity = fgVal;
-                    }
+                    layer.opacity = layer.type === 'background' ? bgVal : fgVal;
                 });
                 renderCanvas();
                 renderLayerList();
-                if (previewModal.classList.contains('active')) {
-                    renderFullPreview();
-                }
+                if (previewModal.classList.contains('active')) renderFullPreview();
             }
 
-            // ---------- 添加图片（支持多张） ----------
+            // 添加图片
             async function addImages(files, type) {
                 for (const file of files) {
                     await new Promise((resolve, reject) => {
@@ -778,7 +506,6 @@
                                     offsetX = 0;
                                     offsetY = (CANVAS_H - drawH) / 2;
                                 }
-
                                 const layerName = (type === 'background' ? '背景·' : '前景·') + file.name.slice(0, 16);
                                 const newLayer = {
                                     id: `layer-${layerIdCounter++}`,
@@ -786,25 +513,14 @@
                                     img: img,
                                     name: layerName,
                                     opacity: type === 'background' ? parseInt(bgOpacitySlider.value,10)/100 : parseInt(fgOpacitySlider.value,10)/100,
-                                    x: offsetX,
-                                    y: offsetY,
-                                    width: drawW,
-                                    height: drawH,
+                                    x: offsetX, y: offsetY, width: drawW, height: drawH,
                                 };
-
-                                if (type === 'background') {
-                                    layers.unshift(newLayer);
-                                } else {
-                                    layers.push(newLayer);
-                                }
-
+                                if (type === 'background') layers.unshift(newLayer);
+                                else layers.push(newLayer);
                                 selectedLayerId = newLayer.id;
-
                                 renderLayerList();
                                 renderCanvas();
-                                if (previewModal.classList.contains('active')) {
-                                    renderFullPreview();
-                                }
+                                if (previewModal.classList.contains('active')) renderFullPreview();
                                 resolve();
                             };
                             img.onerror = () => reject('图片加载失败');
@@ -814,11 +530,11 @@
                         reader.readAsDataURL(file);
                     });
                 }
-                document.getElementById('uploadedStatus').textContent = `已上传 ${files.length} 张${type === 'background' ? '背景' : '前景'}图片`;
+                document.getElementById('uploadedStatus').textContent = `当前共 ${layers.length} 个图层`;
                 canvasTip.textContent = isLocked ? '🔒 已锁定，解锁后可拖拽' : '🔓 拖拽画布中的图片可调整位置';
             }
 
-            // ---------- 重置所有图层 ----------
+            // 重置
             function resetAll() {
                 layers = [];
                 selectedLayerId = null;
@@ -832,42 +548,28 @@
                 isLocked = false;
                 lockToggleBtn.classList.remove('active');
                 lockToggleBtn.innerHTML = '<span class="lock-icon" id="lockIcon">🔓</span> 解锁图层';
-                window.lockIcon = document.getElementById('lockIcon');
                 canvasTip.textContent = '🔓 解锁图层后可直接拖拽图片调整位置';
                 renderLayerList();
                 renderCanvas();
-                if (previewModal.classList.contains('active')) {
-                    renderFullPreview();
-                }
+                if (previewModal.classList.contains('active')) renderFullPreview();
             }
 
-            // ---------- 画布拖拽 ----------
-            let isDraggingLayer = false;
-            let dragStartX, dragStartY;
-            let dragStartLayerX, dragStartLayerY;
-            let dragLayerId = null;
-
+            // 画布拖拽
+            let isDraggingLayer = false, dragStartX, dragStartY, dragStartLayerX, dragStartLayerY, dragLayerId = null;
             function getCanvasMousePos(e) {
                 const rect = canvas.getBoundingClientRect();
                 const scaleX = CANVAS_W / rect.width;
                 const scaleY = CANVAS_H / rect.height;
-                const mouseX = (e.clientX - rect.left) * scaleX;
-                const mouseY = (e.clientY - rect.top) * scaleY;
-                return { x: mouseX, y: mouseY };
+                return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
             }
-
             function getLayerAtPoint(px, py) {
                 for (let i = layers.length - 1; i >= 0; i--) {
                     const layer = layers[i];
                     if (!layer.width) continue;
-                    if (px >= layer.x && px <= layer.x + layer.width &&
-                        py >= layer.y && py <= layer.y + layer.height) {
-                        return layer;
-                    }
+                    if (px >= layer.x && px <= layer.x + layer.width && py >= layer.y && py <= layer.y + layer.height) return layer;
                 }
                 return null;
             }
-
             canvas.addEventListener('mousedown', (e) => {
                 if (isLocked) return;
                 const pos = getCanvasMousePos(e);
@@ -876,13 +578,10 @@
                     selectedLayerId = layer.id;
                     renderLayerList();
                     renderCanvas();
-
                     isDraggingLayer = true;
                     dragLayerId = layer.id;
-                    dragStartX = pos.x;
-                    dragStartY = pos.y;
-                    dragStartLayerX = layer.x;
-                    dragStartLayerY = layer.y;
+                    dragStartX = pos.x; dragStartY = pos.y;
+                    dragStartLayerX = layer.x; dragStartLayerY = layer.y;
                     canvas.style.cursor = 'grabbing';
                 } else {
                     selectedLayerId = null;
@@ -890,36 +589,23 @@
                     renderCanvas();
                 }
             });
-
             canvas.addEventListener('mousemove', (e) => {
                 if (!isDraggingLayer || !dragLayerId || isLocked) return;
                 const pos = getCanvasMousePos(e);
                 const layer = layers.find(l => l.id === dragLayerId);
                 if (!layer) return;
-                const dx = pos.x - dragStartX;
-                const dy = pos.y - dragStartY;
-                layer.x = dragStartLayerX + dx;
-                layer.y = dragStartLayerY + dy;
+                layer.x = dragStartLayerX + (pos.x - dragStartX);
+                layer.y = dragStartLayerY + (pos.y - dragStartY);
                 renderCanvas();
             });
-
             canvas.addEventListener('mouseup', () => {
-                if (isDraggingLayer) {
-                    isDraggingLayer = false;
-                    dragLayerId = null;
-                    canvas.style.cursor = 'default';
-                }
+                if (isDraggingLayer) { isDraggingLayer = false; dragLayerId = null; canvas.style.cursor = 'default'; }
             });
-
             canvas.addEventListener('mouseleave', () => {
-                if (isDraggingLayer) {
-                    isDraggingLayer = false;
-                    dragLayerId = null;
-                    canvas.style.cursor = 'default';
-                }
+                if (isDraggingLayer) { isDraggingLayer = false; dragLayerId = null; canvas.style.cursor = 'default'; }
             });
 
-            // ---------- 锁定按钮 ----------
+            // 锁定
             lockToggleBtn.addEventListener('click', () => {
                 isLocked = !isLocked;
                 if (isLocked) {
@@ -932,87 +618,94 @@
                     lockToggleBtn.innerHTML = '<span class="lock-icon" id="lockIcon">🔓</span> 解锁图层';
                     canvasTip.textContent = '🔓 拖拽画布中的图片可调整位置';
                 }
-                window.lockIcon = document.getElementById('lockIcon');
                 renderCanvas();
             });
 
-            // ---------- 全图预览 ----------
+            // 预览
             const openPreviewBtn = document.getElementById('openPreviewBtn');
             const closePreviewBtn = document.getElementById('closePreviewBtn');
             const downloadPreviewBtn = document.getElementById('downloadPreviewBtn');
+            const copyPreviewBtn = document.getElementById('copyPreviewBtn');
 
             function openPreview() {
                 renderFullPreview();
                 previewModal.classList.add('active');
                 document.body.style.overflow = 'hidden';
             }
-
             function closePreview() {
                 previewModal.classList.remove('active');
                 document.body.style.overflow = '';
             }
-
             openPreviewBtn.addEventListener('click', openPreview);
             closePreviewBtn.addEventListener('click', closePreview);
-
-            // 点击模态背景关闭
-            previewModal.addEventListener('click', (e) => {
-                if (e.target === previewModal) {
-                    closePreview();
-                }
-            });
-
-            // ESC 关闭
+            previewModal.addEventListener('click', (e) => { if (e.target === previewModal) closePreview(); });
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && previewModal.classList.contains('active')) {
-                    closePreview();
-                }
+                if (e.key === 'Escape' && previewModal.classList.contains('active')) closePreview();
             });
 
-            // 下载预览图片
+            // 生成纯导出 canvas
+            function createExportCanvas() {
+                const exportCanvas = document.createElement('canvas');
+                exportCanvas.width = CANVAS_W;
+                exportCanvas.height = CANVAS_H;
+                const exportCtx = exportCanvas.getContext('2d');
+                drawAllLayersToCtx(exportCtx, CANVAS_W, CANVAS_H, false);
+                return exportCanvas;
+            }
+
+            // 下载图片
             downloadPreviewBtn.addEventListener('click', () => {
-                // 临时创建一个干净canvas，不包含选中轮廓
-                const tempCanvas = document.createElement('canvas');
-                tempCanvas.width = CANVAS_W;
-                tempCanvas.height = CANVAS_H;
-                const tempCtx = tempCanvas.getContext('2d');
-                renderToContext(tempCtx, tempCanvas, false);
+                if (layers.length === 0) { alert('没有可导出的图层'); return; }
+                const exportCanvas = createExportCanvas();
                 const link = document.createElement('a');
                 link.download = `图层合成_${Date.now()}.png`;
-                link.href = tempCanvas.toDataURL('image/png');
+                link.href = exportCanvas.toDataURL('image/png');
                 link.click();
             });
 
-            // ---------- 初始化事件绑定 ----------
+            // 复制图片
+            copyPreviewBtn.addEventListener('click', async () => {
+                if (layers.length === 0) { alert('没有可复制的图层'); return; }
+                try {
+                    const exportCanvas = createExportCanvas();
+                    exportCanvas.toBlob(async (blob) => {
+                        if (!blob) { alert('生成图片失败'); return; }
+                        try {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                            ]);
+                            alert('✅ 图片已复制到剪贴板（含背景层）');
+                        } catch (err) {
+                            console.error('复制失败:', err);
+                            alert('自动复制失败，请尝试手动右键保存或使用下载按钮。');
+                        }
+                    }, 'image/png');
+                } catch (err) {
+                    console.error(err);
+                    alert('复制失败，请使用下载按钮。');
+                }
+            });
+
+            // 初始化
             function init() {
                 document.getElementById('bgUpload').addEventListener('change', async (e) => {
                     const files = Array.from(e.target.files);
-                    if (files.length > 0) {
-                        try { await addImages(files, 'background'); } catch (err) { console.error(err); alert('背景图片加载失败'); }
-                    }
+                    if (files.length > 0) { try { await addImages(files, 'background'); } catch (err) { console.error(err); alert('背景图片加载失败'); } }
                     e.target.value = '';
                 });
-
                 document.getElementById('fgUpload').addEventListener('change', async (e) => {
                     const files = Array.from(e.target.files);
-                    if (files.length > 0) {
-                        try { await addImages(files, 'foreground'); } catch (err) { console.error(err); alert('前景图片加载失败'); }
-                    }
+                    if (files.length > 0) { try { await addImages(files, 'foreground'); } catch (err) { console.error(err); alert('前景图片加载失败'); } }
                     e.target.value = '';
                 });
-
                 bgOpacitySlider.addEventListener('input', updateOpacityFromSlider);
                 fgOpacitySlider.addEventListener('input', updateOpacityFromSlider);
-
                 document.getElementById('resetBtn').addEventListener('click', resetAll);
-
                 renderLayerList();
                 renderCanvas();
-
                 document.addEventListener('dragover', (e) => e.preventDefault());
                 document.addEventListener('drop', (e) => e.preventDefault());
             }
-
             window.addEventListener('DOMContentLoaded', init);
         })();
     </script>

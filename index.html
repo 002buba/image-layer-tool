@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图层工坊 · 独立透明度 · 图层排序 · 滚轮缩放</title>
+    <title>图层工坊 · 独立透明度 · 箭头排序 · 滚轮缩放</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -105,67 +105,73 @@
             font-size: 1.05rem; font-weight: 600; color: #0f172a;
             margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;
         }
-        .size-inputs {
-            display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap;
-        }
+        .size-inputs { display: flex; gap: 0.8rem; align-items: center; flex-wrap: wrap; }
         .size-inputs .input-group {
             display: flex; align-items: center; gap: 0.4rem;
             background: white; border: 1px solid #d1d9e6; border-radius: 0.8rem;
             padding: 0.3rem 0.6rem; flex: 1; min-width: 100px;
         }
-        .size-inputs .input-group label {
-            font-size: 0.8rem; color: #475569; font-weight: 500;
-        }
+        .size-inputs .input-group label { font-size: 0.8rem; color: #475569; font-weight: 500; }
         .size-inputs .input-group input {
             width: 60px; border: none; outline: none; font-weight: 600;
-            color: #0f172a; font-size: 0.9rem; background: transparent;
-            text-align: right; padding: 0.2rem 0;
-        }
-        .size-inputs .input-group input::-webkit-outer-spin-button,
-        .size-inputs .input-group input::-webkit-inner-spin-button {
-            -webkit-appearance: none; margin: 0;
-        }
-        .size-inputs .input-group input[type="number"] {
-            -moz-appearance: textfield;
+            color: #0f172a; font-size: 0.9rem; background: transparent; text-align: right;
         }
         .apply-size-btn {
             background: #3b82f6; color: white; border: none; border-radius: 0.8rem;
             padding: 0.5rem 1.2rem; font-weight: 600; font-size: 0.85rem;
-            cursor: pointer; transition: 0.15s; white-space: nowrap;
+            cursor: pointer; transition: 0.15s;
         }
         .apply-size-btn:hover { background: #2563eb; }
-        .preset-sizes {
-            display: flex; gap: 0.4rem; margin-top: 0.6rem; flex-wrap: wrap;
-        }
+        .preset-sizes { display: flex; gap: 0.4rem; margin-top: 0.6rem; flex-wrap: wrap; }
         .preset-sizes button {
             background: white; border: 1px solid #d1d9e6; border-radius: 99px;
             padding: 0.25rem 0.8rem; font-size: 0.75rem; font-weight: 500;
             color: #334155; cursor: pointer; transition: 0.15s;
         }
-        .preset-sizes button:hover {
-            background: #eff6ff; border-color: #3b82f6; color: #1e40af;
-        }
+        .preset-sizes button:hover { background: #eff6ff; border-color: #3b82f6; color: #1e40af; }
+        
+        /* 图层列表样式 */
         .layer-list {
             background: #f8fafc; border-radius: 1.4rem; padding: 1.2rem 1rem;
-            border: 1px solid #e2e8f0; flex: 1;
+            border: 1px solid #e2e8f0; flex: 1; display: flex; flex-direction: column;
         }
         .layer-list h3 {
             font-size: 1rem; font-weight: 600; color: #334155; margin-bottom: 0.8rem;
             display: flex; justify-content: space-between; align-items: center;
         }
+        #layerListContainer {
+            flex: 1; min-height: 200px; max-height: 380px; overflow-y: auto;
+            padding-right: 0.2rem;
+        }
+        #layerListContainer::-webkit-scrollbar { width: 6px; }
+        #layerListContainer::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+
         .layer-item {
             display: flex; flex-direction: column; gap: 0.4rem;
             padding: 0.6rem 0.7rem; background: white; border-radius: 1rem;
             margin-bottom: 0.5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-            border: 1px solid #e9eef3; transition: 0.15s; user-select: none;
+            border: 2px solid transparent; transition: 0.15s; user-select: none;
+        }
+        .layer-item.selected {
+            border-color: #3b82f6; background: #eff6ff;
         }
         .layer-item .layer-row {
             display: flex; align-items: center; gap: 0.5rem;
-            cursor: grab;
         }
-        .layer-item .layer-row:active { cursor: grabbing; }
-        .layer-item.dragging { opacity: 0.5; border: 2px dashed #3b82f6; }
-        .layer-item .drag-handle { font-size: 1.1rem; color: #94a3b8; cursor: grab; line-height: 1; }
+        /* 上下箭头样式 */
+        .layer-item .sort-btn {
+            background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569;
+            border-radius: 0.3rem; width: 24px; height: 24px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 0.75rem; transition: 0.15s;
+            flex-shrink: 0;
+        }
+        .layer-item .sort-btn:hover:not(:disabled) {
+            background: #e2e8f0; color: #0f172a; border-color: #94a3b8;
+        }
+        .layer-item .sort-btn:disabled {
+            opacity: 0.3; cursor: not-allowed;
+        }
         .layer-item .layer-name {
             flex: 1; font-weight: 500; color: #0f172a; font-size: 0.85rem;
             display: flex; align-items: center; gap: 0.3rem;
@@ -178,33 +184,20 @@
         .layer-item .select-indicator {
             width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0;
         }
-        .layer-item.selected .select-indicator {
-            background: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
-        }
-        .layer-item.selected { border-color: #3b82f6; background: #eff6ff; }
+        .layer-item.selected .select-indicator { background: #3b82f6; }
         .layer-item .delete-btn {
             background: transparent; border: none; color: #94a3b8;
-            font-size: 1rem; cursor: pointer; padding: 0 0.2rem;
-            border-radius: 50%; transition: 0.15s;
-            display: flex; align-items: center; justify-content: center;
-            width: 22px; height: 22px; flex-shrink: 0;
+            font-size: 1rem; cursor: pointer; padding: 0 0.2rem; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; flex-shrink: 0;
         }
-        .layer-item .delete-btn:hover {
-            background: #fee2e2; color: #dc2626;
-        }
+        .layer-item .delete-btn:hover { background: #fee2e2; color: #dc2626; }
         .layer-opacity-row {
-            display: flex; align-items: center; gap: 0.5rem;
-            padding-left: 1.2rem;
+            display: flex; align-items: center; gap: 0.5rem; padding-left: 1.2rem;
         }
-        .layer-opacity-row input[type="range"] {
-            width: 100%; height: 4px;
-        }
-        .layer-opacity-row input[type="range"]::-webkit-slider-thumb {
-            width: 14px; height: 14px;
-        }
-        .layer-opacity-row .opacity-value {
-            font-size: 0.75rem; min-width: 38px;
-        }
+        .layer-opacity-row input[type="range"] { width: 100%; height: 4px; }
+        .layer-opacity-row input[type="range"]::-webkit-slider-thumb { width: 14px; height: 14px; }
+        .layer-opacity-row .opacity-value { font-size: 0.75rem; min-width: 38px; }
+        
         .empty-layer-msg { text-align: center; color: #64748b; font-size: 0.9rem; padding: 1rem 0; }
         .reset-btn {
             background: #f1f5f9; border: none; border-radius: 1rem; padding: 0.7rem 1rem;
@@ -217,38 +210,26 @@
         .preview-modal {
             display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(12px); z-index: 1000; justify-content: center; align-items: center;
-            padding: 2rem; animation: fadeIn 0.2s ease;
+            padding: 2rem;
         }
         .preview-modal.active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .preview-content {
-            position: relative; max-width: 90vw; max-height: 90vh;
-            display: flex; flex-direction: column; align-items: center; gap: 1.2rem;
-        }
-        .preview-content canvas {
-            display: block; max-width: 90vw; max-height: 80vh; width: auto; height: auto;
-            border-radius: 1rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-            background: #1e293b; border: 2px solid rgba(255, 255, 255, 0.15);
-        }
+        .preview-content { position: relative; max-width: 90vw; display: flex; flex-direction: column; align-items: center; gap: 1.2rem; }
+        .preview-content canvas { display: block; max-width: 90vw; max-height: 80vh; border-radius: 1rem; background: #1e293b; }
         .preview-toolbar {
-            display: flex; gap: 1rem; align-items: center;
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(8px);
-            padding: 0.6rem 1.2rem; border-radius: 2rem; border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex; gap: 1rem; align-items: center; background: rgba(255, 255, 255, 0.1);
+            padding: 0.6rem 1.2rem; border-radius: 2rem;
         }
         .preview-toolbar button {
-            background: none; border: none; color: white; font-size: 0.95rem;
-            font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.4rem;
-            padding: 0.4rem 1rem; border-radius: 2rem; transition: 0.15s; font-family: inherit;
+            background: none; border: none; color: white; font-size: 0.95rem; font-weight: 500;
+            cursor: pointer; padding: 0.4rem 1rem; border-radius: 2rem; transition: 0.15s;
         }
         .preview-toolbar button:hover { background: rgba(255, 255, 255, 0.15); }
-        .preview-toolbar button.close-btn { background: rgba(239, 68, 68, 0.8); color: white; }
-        .preview-toolbar button.close-btn:hover { background: rgba(239, 68, 68, 1); }
-        .preview-hint { color: rgba(255, 255, 255, 0.7); font-size: 0.8rem; margin-top: 0.3rem; }
+        .preview-toolbar button.close-btn { background: rgba(239, 68, 68, 0.8); }
     </style>
 </head>
 <body>
     <div class="app">
-        <h1>🖼️ 图层工坊 <span>独立透明度 · 图层排序 · 滚轮缩放</span></h1>
+        <h1>🖼️ 图层工坊 <span>独立透明度 · 箭头排序 · 滚轮缩放</span></h1>
         <div class="main-panel">
             <div class="canvas-area">
                 <div class="canvas-wrapper" id="canvasWrapper">
@@ -257,11 +238,11 @@
                 </div>
                 <div class="layer-controls">
                     <div class="global-opacity-group">
-                        <label>全局背景透明度 <input type="range" id="bgOpacitySlider" min="0" max="100" value="100" step="1"></label>
+                        <label>全局背景透明度 <input type="range" id="bgOpacitySlider" min="0" max="100" value="100"></label>
                         <span class="opacity-value" id="bgOpacityValue">100%</span>
                     </div>
                     <div class="global-opacity-group">
-                        <label>全局前景透明度 <input type="range" id="fgOpacitySlider" min="0" max="100" value="100" step="1"></label>
+                        <label>全局前景透明度 <input type="range" id="fgOpacitySlider" min="0" max="100" value="100"></label>
                         <span class="opacity-value" id="fgOpacityValue">100%</span>
                     </div>
                     <div class="action-buttons">
@@ -279,11 +260,11 @@
                     <div class="size-inputs">
                         <div class="input-group">
                             <label>宽</label>
-                            <input type="number" id="canvasWidthInput" value="800" min="100" max="4000" step="10">
+                            <input type="number" id="canvasWidthInput" value="800" min="100" max="4000">
                         </div>
                         <div class="input-group">
                             <label>高</label>
-                            <input type="number" id="canvasHeightInput" value="600" min="100" max="4000" step="10">
+                            <input type="number" id="canvasHeightInput" value="600" min="100" max="4000">
                         </div>
                         <button class="apply-size-btn" id="applySizeBtn">应用</button>
                     </div>
@@ -292,7 +273,6 @@
                         <button data-w="1080" data-h="1080">1:1</button>
                         <button data-w="1080" data-h="1920">9:16</button>
                         <button data-w="1920" data-h="1080">16:9</button>
-                        <button data-w="1200" data-h="800">3:2</button>
                     </div>
                 </div>
 
@@ -314,7 +294,6 @@
                     <div id="layerListContainer"></div>
                     <button class="reset-btn" id="resetBtn">↺ 重置所有图层</button>
                 </div>
-                <div class="note">拖动图层排序 · 每个图层独立透明度 · 点击前景选中后滚轮缩放</div>
             </div>
         </div>
     </div>
@@ -327,7 +306,6 @@
                 <button id="downloadPreviewBtn">⬇️ 下载图片</button>
                 <button id="copyPreviewBtn">📋 复制图片</button>
             </div>
-            <div class="preview-hint">全尺寸预览 · 按 ESC 关闭</div>
         </div>
     </div>
 
@@ -364,12 +342,11 @@
             let selectedLayerId = null;
             let isLocked = false;
 
-            // 缩放控制相关
             const HANDLE_SIZE = 10;
             let activeHandle = null;
             let handleStartX, handleStartY, handleStartW, handleStartH, handleStartLayerX, handleStartLayerY;
 
-            // ---------- 绘制（按数组顺序，数组第一个在最底层） ----------
+            // ---------- 核心绘制 ----------
             function drawAllLayersToCtx(targetCtx, targetW, targetH, includeSelection = false) {
                 targetCtx.clearRect(0, 0, targetW, targetH);
 
@@ -384,12 +361,11 @@
                     return;
                 }
 
-                // 按数组顺序绘制（数组第一个在最底层，最后在最上层）
+                // 按数组顺序绘制，数组[0]在最底层，数组末尾在最上层
                 for (const layer of layers) {
                     drawSingleLayer(targetCtx, layer, targetW, targetH);
                 }
 
-                // 选中轮廓 + 控制点（主画布、未锁定、选中图层为前景时显示控制点）
                 if (includeSelection && selectedLayerId && !isLocked) {
                     const sel = layers.find(l => l.id === selectedLayerId);
                     if (sel && sel.width) {
@@ -407,7 +383,6 @@
                         targetCtx.strokeRect(x, y, w, h);
                         targetCtx.restore();
 
-                        // 仅对前景显示控制点
                         if (sel.type === 'foreground') {
                             const handles = [
                                 { name: 'nw', cx: x, cy: y },
@@ -442,194 +417,107 @@
                     targetCtx.drawImage(layer.img,
                         layer.x * scaleX, layer.y * scaleY,
                         layer.width * scaleX, layer.height * scaleY);
-                } else {
-                    const img = layer.img;
-                    const canvasRatio = targetW / targetH;
-                    const imgRatio = img.width / img.height;
-                    let drawW, drawH, offsetX, offsetY;
-                    if (imgRatio > canvasRatio) {
-                        drawH = targetH;
-                        drawW = img.width * (targetH / img.height);
-                        offsetX = (targetW - drawW) / 2;
-                        offsetY = 0;
-                    } else {
-                        drawW = targetW;
-                        drawH = img.height * (targetW / img.width);
-                        offsetX = 0;
-                        offsetY = (targetH - drawH) / 2;
-                    }
-                    layer.x = offsetX;
-                    layer.y = offsetY;
-                    layer.width = drawW;
-                    layer.height = drawH;
-                    targetCtx.drawImage(img, offsetX, offsetY, drawW, drawH);
                 }
                 targetCtx.restore();
             }
 
-            function renderCanvas() {
-                drawAllLayersToCtx(ctx, CANVAS_W, CANVAS_H, true);
-            }
+            function renderCanvas() { drawAllLayersToCtx(ctx, CANVAS_W, CANVAS_H, true); }
+            function renderFullPreview() { drawAllLayersToCtx(fullPreviewCanvas.getContext('2d'), CANVAS_W, CANVAS_H, false); }
 
-            function renderFullPreview() {
-                drawAllLayersToCtx(fullPreviewCanvas.getContext('2d'), CANVAS_W, CANVAS_H, false);
-            }
-
-            // ---------- 坐标转换 ----------
+            // ---------- 坐标与命中检测 ----------
             function getCanvasMousePos(e) {
                 const rect = canvas.getBoundingClientRect();
-                const scaleX = CANVAS_W / rect.width;
-                const scaleY = CANVAS_H / rect.height;
-                return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+                return { x: (e.clientX - rect.left) * (CANVAS_W / rect.width), y: (e.clientY - rect.top) * (CANVAS_H / rect.height) };
             }
-
-            // ---------- 命中检测 ----------
             function hitTestHandle(px, py, layer) {
-                if (!layer || !layer.width) return null;
-                if (layer.type !== 'foreground') return null;
-                const rect = canvas.getBoundingClientRect();
-                const scale = CANVAS_W / rect.width;
+                if (!layer || !layer.width || layer.type !== 'foreground') return null;
+                const scale = CANVAS_W / canvas.getBoundingClientRect().width;
                 const threshold = (HANDLE_SIZE + 4) * scale;
                 const x = layer.x, y = layer.y, w = layer.width, h = layer.height;
                 const handles = [
-                    { name: 'nw', cx: x, cy: y },
-                    { name: 'ne', cx: x + w, cy: y },
-                    { name: 'sw', cx: x, cy: y + h },
-                    { name: 'se', cx: x + w, cy: y + h }
+                    { name: 'nw', cx: x, cy: y }, { name: 'ne', cx: x + w, cy: y },
+                    { name: 'sw', cx: x, cy: y + h }, { name: 'se', cx: x + w, cy: y + h }
                 ];
                 for (const hd of handles) {
-                    const dx = px - hd.cx, dy = py - hd.cy;
-                    if (Math.sqrt(dx*dx + dy*dy) <= threshold) return hd.name;
+                    if (Math.hypot(px - hd.cx, py - hd.cy) <= threshold) return hd.name;
                 }
                 return null;
             }
-
             function getLayerAtPoint(px, py) {
-                // 从最上层开始查找
                 for (let i = layers.length - 1; i >= 0; i--) {
                     const layer = layers[i];
-                    if (!layer.width) continue;
-                    if (px >= layer.x && px <= layer.x + layer.width && py >= layer.y && py <= layer.y + layer.height) return layer;
+                    if (layer.width && px >= layer.x && px <= layer.x + layer.width && py >= layer.y && py <= layer.y + layer.height) return layer;
                 }
                 return null;
             }
-
             function updateCursor(px, py) {
-                if (isLocked) {
-                    const layer = getLayerAtPoint(px, py);
-                    canvas.style.cursor = layer ? 'zoom-in' : 'default';
-                    return;
-                }
+                if (isLocked) { canvas.style.cursor = getLayerAtPoint(px, py) ? 'zoom-in' : 'default'; return; }
                 const sel = layers.find(l => l.id === selectedLayerId);
                 if (sel && sel.type === 'foreground') {
                     const handle = hitTestHandle(px, py, sel);
-                    if (handle) {
-                        if (handle === 'nw' || handle === 'se') canvas.style.cursor = 'nwse-resize';
-                        else canvas.style.cursor = 'nesw-resize';
-                        return;
-                    }
+                    if (handle) { canvas.style.cursor = (handle === 'nw' || handle === 'se') ? 'nwse-resize' : 'nesw-resize'; return; }
                 }
-                const layer = getLayerAtPoint(px, py);
-                canvas.style.cursor = layer ? 'grab' : 'default';
+                canvas.style.cursor = getLayerAtPoint(px, py) ? 'grab' : 'default';
             }
 
-            // ---------- 拖拽与缩放交互（未锁定） ----------
+            // ---------- 画布拖拽与缩放 ----------
             let isDraggingLayer = false;
             let dragStartX, dragStartY, dragStartLayerX, dragStartLayerY, dragLayerId = null;
 
             canvas.addEventListener('mousedown', (e) => {
                 if (isLocked) return;
                 const pos = getCanvasMousePos(e);
-
                 if (selectedLayerId) {
                     const sel = layers.find(l => l.id === selectedLayerId);
                     if (sel && sel.type === 'foreground') {
                         const handle = hitTestHandle(pos.x, pos.y, sel);
                         if (handle) {
                             activeHandle = handle;
-                            handleStartX = pos.x;
-                            handleStartY = pos.y;
-                            handleStartW = sel.width;
-                            handleStartH = sel.height;
-                            handleStartLayerX = sel.x;
-                            handleStartLayerY = sel.y;
+                            handleStartX = pos.x; handleStartY = pos.y;
+                            handleStartW = sel.width; handleStartH = sel.height;
+                            handleStartLayerX = sel.x; handleStartLayerY = sel.y;
                             sel._startAspect = sel.width / sel.height;
-                            canvas.style.cursor = (handle === 'nw' || handle === 'se') ? 'nwse-resize' : 'nesw-resize';
                             return;
                         }
                     }
                 }
-
                 const layer = getLayerAtPoint(pos.x, pos.y);
                 if (layer) {
-                    selectedLayerId = layer.id;
-                    renderLayerList();
-                    renderCanvas();
-                    if (!isLocked) {
-                        isDraggingLayer = true;
-                        dragLayerId = layer.id;
-                        dragStartX = pos.x;
-                        dragStartY = pos.y;
-                        dragStartLayerX = layer.x;
-                        dragStartLayerY = layer.y;
-                        canvas.style.cursor = 'grabbing';
-                    }
+                    selectedLayerId = layer.id; renderLayerList(); renderCanvas();
+                    isDraggingLayer = true; dragLayerId = layer.id;
+                    dragStartX = pos.x; dragStartY = pos.y;
+                    dragStartLayerX = layer.x; dragStartLayerY = layer.y;
+                    canvas.style.cursor = 'grabbing';
                 } else {
-                    selectedLayerId = null;
-                    renderLayerList();
-                    renderCanvas();
-                    canvas.style.cursor = 'default';
+                    selectedLayerId = null; renderLayerList(); renderCanvas();
                 }
             });
 
             canvas.addEventListener('mousemove', (e) => {
                 const pos = getCanvasMousePos(e);
-
                 if (activeHandle && !isLocked) {
                     const layer = layers.find(l => l.id === selectedLayerId);
-                    if (!layer) { activeHandle = null; return; }
-                    const dx = pos.x - handleStartX;
-                    const dy = pos.y - handleStartY;
+                    if (!layer) return;
+                    const dx = pos.x - handleStartX, dy = pos.y - handleStartY;
                     const aspect = layer._startAspect || (handleStartW / handleStartH);
                     let newW, newH, newX, newY;
-
                     if (activeHandle === 'se') {
-                        const baseW = Math.max(30, handleStartW + dx);
-                        newW = baseW;
-                        newH = newW / aspect;
-                        newX = handleStartLayerX;
-                        newY = handleStartLayerY;
+                        newW = Math.max(30, handleStartW + dx); newH = newW / aspect;
+                        newX = handleStartLayerX; newY = handleStartLayerY;
                     } else if (activeHandle === 'nw') {
-                        const baseW = Math.max(30, handleStartW - dx);
-                        newW = baseW;
-                        newH = newW / aspect;
-                        newX = handleStartLayerX + handleStartW - newW;
-                        newY = handleStartLayerY + handleStartH - newH;
+                        newW = Math.max(30, handleStartW - dx); newH = newW / aspect;
+                        newX = handleStartLayerX + handleStartW - newW; newY = handleStartLayerY + handleStartH - newH;
                     } else if (activeHandle === 'ne') {
-                        const baseW = Math.max(30, handleStartW + dx);
-                        newW = baseW;
-                        newH = newW / aspect;
-                        newX = handleStartLayerX;
-                        newY = handleStartLayerY + handleStartH - newH;
+                        newW = Math.max(30, handleStartW + dx); newH = newW / aspect;
+                        newX = handleStartLayerX; newY = handleStartLayerY + handleStartH - newH;
                     } else if (activeHandle === 'sw') {
-                        const baseW = Math.max(30, handleStartW - dx);
-                        newW = baseW;
-                        newH = newW / aspect;
-                        newX = handleStartLayerX + handleStartW - newW;
-                        newY = handleStartLayerY;
+                        newW = Math.max(30, handleStartW - dx); newH = newW / aspect;
+                        newX = handleStartLayerX + handleStartW - newW; newY = handleStartLayerY;
                     }
-
-                    if (newW && newH) {
-                        layer.width = newW;
-                        layer.height = newH;
-                        layer.x = newX;
-                        layer.y = newY;
-                        renderCanvas();
-                        if (previewModal.classList.contains('active')) renderFullPreview();
-                    }
+                    layer.width = newW; layer.height = newH; layer.x = newX; layer.y = newY;
+                    renderCanvas();
                     return;
                 }
-
                 if (isDraggingLayer && dragLayerId && !isLocked) {
                     const layer = layers.find(l => l.id === dragLayerId);
                     if (layer) {
@@ -639,51 +527,29 @@
                     }
                     return;
                 }
-
                 updateCursor(pos.x, pos.y);
             });
 
             function handleMouseUp() {
-                if (activeHandle) {
-                    activeHandle = null;
-                    renderCanvas();
-                }
-                if (isDraggingLayer) {
-                    isDraggingLayer = false;
-                    dragLayerId = null;
-                }
-                if (!isLocked) {
-                    const sel = layers.find(l => l.id === selectedLayerId);
-                    canvas.style.cursor = sel ? 'grab' : 'default';
-                } else {
-                    canvas.style.cursor = 'default';
-                }
+                if (activeHandle) { activeHandle = null; renderCanvas(); }
+                if (isDraggingLayer) { isDraggingLayer = false; dragLayerId = null; }
+                canvas.style.cursor = isLocked ? 'default' : 'grab';
             }
             canvas.addEventListener('mouseup', handleMouseUp);
             canvas.addEventListener('mouseleave', handleMouseUp);
 
-            // ---------- 滚轮缩放（点击前景选中后生效） ----------
+            // 滚轮缩放（点击前景选中后生效）
             canvas.addEventListener('wheel', (e) => {
                 e.preventDefault();
                 const pos = getCanvasMousePos(e);
                 const layer = getLayerAtPoint(pos.x, pos.y);
-                if (!layer) return;
-                if (layer.type !== 'foreground') return;
-
-                if (selectedLayerId !== layer.id) {
-                    selectedLayerId = layer.id;
-                    renderLayerList();
-                    renderCanvas();
-                }
+                if (!layer || layer.type !== 'foreground') return;
+                if (selectedLayerId !== layer.id) { selectedLayerId = layer.id; renderLayerList(); renderCanvas(); }
 
                 const delta = e.deltaY > 0 ? -1 : 1;
                 const scaleFactor = 1 + delta * 0.08;
-
-                const minSize = 20;
-                const maxSize = Math.max(CANVAS_W, CANVAS_H) * 3;
-
-                let newW = layer.width * scaleFactor;
-                let newH = layer.height * scaleFactor;
+                const minSize = 20, maxSize = Math.max(CANVAS_W, CANVAS_H) * 3;
+                let newW = layer.width * scaleFactor, newH = layer.height * scaleFactor;
                 const aspect = layer.width / layer.height;
 
                 if (newW < minSize) { newW = minSize; newH = newW / aspect; }
@@ -691,17 +557,11 @@
                 if (newW > maxSize) { newW = maxSize; newH = newW / aspect; }
                 else if (newH > maxSize) { newH = maxSize; newW = newH * aspect; }
 
-                const centerX = layer.x + layer.width / 2;
-                const centerY = layer.y + layer.height / 2;
-                const offsetX = pos.x - centerX;
-                const offsetY = pos.y - centerY;
-                const newCenterX = pos.x - offsetX * (newW / layer.width);
-                const newCenterY = pos.y - offsetY * (newH / layer.height);
-
-                layer.x = newCenterX - newW / 2;
-                layer.y = newCenterY - newH / 2;
-                layer.width = newW;
-                layer.height = newH;
+                const centerX = layer.x + layer.width / 2, centerY = layer.y + layer.height / 2;
+                const offsetX = pos.x - centerX, offsetY = pos.y - centerY;
+                layer.x = pos.x - offsetX * (newW / layer.width) - newW / 2;
+                layer.y = pos.y - offsetY * (newH / layer.height) - newH / 2;
+                layer.width = newW; layer.height = newH;
 
                 renderCanvas();
                 if (previewModal.classList.contains('active')) renderFullPreview();
@@ -713,13 +573,37 @@
                 if (index === -1) return;
                 layers.splice(index, 1);
                 if (selectedLayerId === layerId) selectedLayerId = null;
-                renderLayerList();
-                renderCanvas();
+                renderLayerList(); renderCanvas();
                 if (previewModal.classList.contains('active')) renderFullPreview();
                 document.getElementById('uploadedStatus').textContent = layers.length === 0 ? '' : `当前共 ${layers.length} 个图层`;
             }
 
-            // ---------- 图层列表（每个图层独立透明度滑块） ----------
+            // ======================= 箭头排序核心逻辑 =======================
+            // 在UI中，列表是从上到下显示的（对应数组从后到前）
+            // 点击“向上箭头”意味着在UI中往上移（在数组中往末尾移）
+            function moveLayerUp(layerId) {
+                const idx = layers.findIndex(l => l.id === layerId);
+                // 如果已经在数组末尾（UI最顶层），则不能继续往上
+                if (idx === -1 || idx === layers.length - 1) return; 
+                // 与后一个元素交换位置
+                [layers[idx], layers[idx + 1]] = [layers[idx + 1], layers[idx]];
+                renderLayerList(); renderCanvas();
+                if (previewModal.classList.contains('active')) renderFullPreview();
+            }
+
+            // 点击“向下箭头”意味着在UI中往下移（在数组中往开头移）
+            function moveLayerDown(layerId) {
+                const idx = layers.findIndex(l => l.id === layerId);
+                // 如果已经在数组开头（UI最底层），则不能继续往下
+                if (idx === -1 || idx === 0) return;
+                // 与前一个元素交换位置
+                [layers[idx], layers[idx - 1]] = [layers[idx - 1], layers[idx]];
+                renderLayerList(); renderCanvas();
+                if (previewModal.classList.contains('active')) renderFullPreview();
+            }
+            // ===============================================================
+
+            // ---------- 图层列表渲染 ----------
             function renderLayerList() {
                 const container = document.getElementById('layerListContainer');
                 if (!container) return;
@@ -727,17 +611,29 @@
                     container.innerHTML = `<div class="empty-layer-msg">暂无图层，请上传图片</div>`;
                     return;
                 }
+                
+                // 反转数组用于UI显示，数组的最后一个元素（顶层）显示在最上面
                 const reversed = [...layers].reverse();
                 let html = '';
-                reversed.forEach((layer) => {
+                reversed.forEach((layer, index) => {
                     const typeIcon = layer.type === 'background' ? '🌄' : '🧑';
                     const typeName = layer.type === 'background' ? '背景' : '前景';
                     const opacityPercent = Math.round(layer.opacity * 100);
                     const isSelected = layer.id === selectedLayerId ? 'selected' : '';
+                    
+                    // 判断是否在边缘，以禁用对应的箭头
+                    // 在数组中的真实索引
+                    const realIndex = layers.findIndex(l => l.id === layer.id);
+                    const isTop = realIndex === layers.length - 1;
+                    const isBottom = realIndex === 0;
+
                     html += `
                         <div class="layer-item ${isSelected}" data-layer-id="${layer.id}">
-                            <div class="layer-row" draggable="true" data-drag-id="${layer.id}">
-                                <span class="drag-handle">⋮⋮</span>
+                            <div class="layer-row">
+                                <div style="display:flex; flex-direction:column; gap:2px; margin-right:2px;">
+                                    <button class="sort-btn btn-up" data-move-up="${layer.id}" title="上移一层" ${isTop ? 'disabled' : ''}>▲</button>
+                                    <button class="sort-btn btn-down" data-move-down="${layer.id}" title="下移一层" ${isBottom ? 'disabled' : ''}>▼</button>
+                                </div>
                                 <span class="select-indicator"></span>
                                 <div class="layer-name">
                                     ${typeIcon} ${layer.name}
@@ -755,133 +651,75 @@
                 });
                 container.innerHTML = html;
 
-                // 点击选中
+                // 绑定点击选中
                 document.querySelectorAll('.layer-item').forEach(item => {
                     item.addEventListener('click', (e) => {
-                        if (e.target.closest('.delete-btn')) return;
-                        if (e.target.closest('.layer-opacity-slider')) return;
-                        if (e.target.closest('.layer-opacity-row')) return;
-                        const id = item.dataset.layerId;
-                        selectedLayerId = id;
-                        renderLayerList();
-                        renderCanvas();
+                        if (e.target.closest('.delete-btn') || e.target.closest('.sort-btn') || e.target.closest('.layer-opacity-slider') || e.target.closest('.layer-opacity-row')) return;
+                        selectedLayerId = item.dataset.layerId;
+                        renderLayerList(); renderCanvas();
                     });
                 });
 
-                // 删除按钮
+                // 绑定删除按钮
                 document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => { 
+                        e.stopPropagation(); 
+                        deleteLayer(btn.dataset.deleteId); 
+                    });
+                });
+
+                // 绑定上移按钮
+                document.querySelectorAll('.btn-up').forEach(btn => {
                     btn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        const layerId = btn.dataset.deleteId;
-                        if (layerId) deleteLayer(layerId);
+                        moveLayerUp(btn.dataset.moveUp);
                     });
                 });
 
-                // 每个图层的独立透明度滑块
+                // 绑定下移按钮
+                document.querySelectorAll('.btn-down').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        moveLayerDown(btn.dataset.moveDown);
+                    });
+                });
+
+                // 绑定独立透明度滑块
                 document.querySelectorAll('.layer-opacity-slider').forEach(slider => {
                     slider.addEventListener('input', (e) => {
                         e.stopPropagation();
                         const layerId = slider.dataset.opacityId;
                         const layer = layers.find(l => l.id === layerId);
-                        if (!layer) return;
-                        const val = parseInt(slider.value, 10);
-                        layer.opacity = val / 100;
-                        // 更新显示百分比
-                        const label = document.getElementById(`opacity-label-${layerId}`);
-                        if (label) label.textContent = `${val}%`;
-                        // 重绘画布
-                        renderCanvas();
-                        if (previewModal.classList.contains('active')) renderFullPreview();
+                        if (layer) {
+                            const val = parseInt(slider.value, 10);
+                            layer.opacity = val / 100;
+                            document.getElementById(`opacity-label-${layerId}`).textContent = `${val}%`;
+                            renderCanvas();
+                            if (previewModal.classList.contains('active')) renderFullPreview();
+                        }
                     });
-                    // 阻止点击滑块时触发选中
                     slider.addEventListener('click', (e) => e.stopPropagation());
                     slider.addEventListener('mousedown', (e) => e.stopPropagation());
                 });
-
-                // 拖拽排序（使用 layer-row 作为拖拽把手）
-                document.querySelectorAll('.layer-row').forEach(row => {
-                    row.addEventListener('dragstart', handleDragStart);
-                    row.addEventListener('dragend', handleDragEnd);
-                });
-                document.querySelectorAll('.layer-item').forEach(item => {
-                    item.addEventListener('dragover', handleDragOver);
-                    item.addEventListener('dragenter', handleDragEnter);
-                    item.addEventListener('dragleave', handleDragLeave);
-                    item.addEventListener('drop', handleDrop);
-                });
             }
 
-            // ---------- 拖拽排序（交换数组位置） ----------
-            let dragSourceId = null;
-            function handleDragStart(e) {
-                const row = e.target.closest('.layer-row');
-                if (!row) return;
-                if (e.target.closest('.delete-btn')) { e.preventDefault(); return; }
-                dragSourceId = row.dataset.dragId;
-                const item = row.closest('.layer-item');
-                if (item) item.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-                e.dataTransfer.setData('text/plain', dragSourceId);
-            }
-            function handleDragEnd(e) {
-                const row = e.target.closest('.layer-row');
-                if (row) {
-                    const item = row.closest('.layer-item');
-                    if (item) item.classList.remove('dragging');
-                }
-                document.querySelectorAll('.layer-item').forEach(el => el.classList.remove('drag-over'));
-                dragSourceId = null;
-            }
-            function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
-            function handleDragEnter(e) {
-                const item = e.target.closest('.layer-item');
-                if (item) item.classList.add('drag-over');
-            }
-            function handleDragLeave(e) {
-                const item = e.target.closest('.layer-item');
-                if (item) item.classList.remove('drag-over');
-            }
-            function handleDrop(e) {
-                e.preventDefault();
-                const targetItem = e.target.closest('.layer-item');
-                if (!targetItem) return;
-                targetItem.classList.remove('drag-over');
-                const sourceId = dragSourceId;
-                const targetId = targetItem.dataset.layerId;
-                if (!sourceId || !targetId || sourceId === targetId) return;
-                const sourceIndex = layers.findIndex(l => l.id === sourceId);
-                const targetIndex = layers.findIndex(l => l.id === targetId);
-                if (sourceIndex === -1 || targetIndex === -1) return;
-                // 交换位置
-                [layers[sourceIndex], layers[targetIndex]] = [layers[targetIndex], layers[sourceIndex]];
-                renderLayerList();
-                renderCanvas();
-                if (previewModal.classList.contains('active')) renderFullPreview();
-            }
-
-            // ---------- 全局透明度滑块（批量调整所有背景或前景） ----------
+            // 全局透明度调整
             function updateGlobalBgOpacity() {
                 const val = parseInt(bgOpacitySlider.value, 10) / 100;
                 bgOpacityValue.textContent = `${Math.round(val*100)}%`;
-                layers.forEach(layer => {
-                    if (layer.type === 'background') layer.opacity = val;
-                });
-                renderCanvas();
-                renderLayerList();
+                layers.forEach(layer => { if (layer.type === 'background') layer.opacity = val; });
+                renderCanvas(); renderLayerList();
                 if (previewModal.classList.contains('active')) renderFullPreview();
             }
             function updateGlobalFgOpacity() {
                 const val = parseInt(fgOpacitySlider.value, 10) / 100;
                 fgOpacityValue.textContent = `${Math.round(val*100)}%`;
-                layers.forEach(layer => {
-                    if (layer.type === 'foreground') layer.opacity = val;
-                });
-                renderCanvas();
-                renderLayerList();
+                layers.forEach(layer => { if (layer.type === 'foreground') layer.opacity = val; });
+                renderCanvas(); renderLayerList();
                 if (previewModal.classList.contains('active')) renderFullPreview();
             }
 
-            // ---------- 添加图片 ----------
+            // 添加图片
             async function addImages(files, type) {
                 for (const file of files) {
                     await new Promise((resolve, reject) => {
@@ -893,30 +731,22 @@
                                 const imgRatio = img.width / img.height;
                                 let drawW, drawH, offsetX, offsetY;
                                 if (imgRatio > canvasRatio) {
-                                    drawH = CANVAS_H;
-                                    drawW = img.width * (CANVAS_H / img.height);
-                                    offsetX = (CANVAS_W - drawW) / 2;
-                                    offsetY = 0;
+                                    drawH = CANVAS_H; drawW = img.width * (CANVAS_H / img.height);
+                                    offsetX = (CANVAS_W - drawW) / 2; offsetY = 0;
                                 } else {
-                                    drawW = CANVAS_W;
-                                    drawH = img.height * (CANVAS_W / img.width);
-                                    offsetX = 0;
-                                    offsetY = (CANVAS_H - drawH) / 2;
+                                    drawW = CANVAS_W; drawH = img.height * (CANVAS_W / img.width);
+                                    offsetX = 0; offsetY = (CANVAS_H - drawH) / 2;
                                 }
                                 const layerName = (type === 'background' ? '背景·' : '前景·') + file.name.slice(0, 16);
                                 const newLayer = {
-                                    id: `layer-${layerIdCounter++}`,
-                                    type: type,
-                                    img: img,
-                                    name: layerName,
+                                    id: `layer-${layerIdCounter++}`, type, img, name: layerName,
                                     opacity: type === 'background' ? parseInt(bgOpacitySlider.value,10)/100 : parseInt(fgOpacitySlider.value,10)/100,
                                     x: offsetX, y: offsetY, width: drawW, height: drawH,
                                 };
                                 if (type === 'background') layers.unshift(newLayer);
                                 else layers.push(newLayer);
                                 selectedLayerId = newLayer.id;
-                                renderLayerList();
-                                renderCanvas();
+                                renderLayerList(); renderCanvas();
                                 if (previewModal.classList.contains('active')) renderFullPreview();
                                 resolve();
                             };
@@ -939,10 +769,8 @@
                 const scaleX = newW / oldW, scaleY = newH / oldH;
                 layers.forEach(layer => {
                     if (layer.width && layer.height) {
-                        layer.x = layer.x * scaleX;
-                        layer.y = layer.y * scaleY;
-                        layer.width = layer.width * scaleX;
-                        layer.height = layer.height * scaleY;
+                        layer.x = layer.x * scaleX; layer.y = layer.y * scaleY;
+                        layer.width = layer.width * scaleX; layer.height = layer.height * scaleY;
                     }
                 });
                 updateCanvasDimensions(newW, newH);
@@ -952,25 +780,17 @@
 
             // 重置
             function resetAll() {
-                layers = [];
-                selectedLayerId = null;
-                activeHandle = null;
-                isDraggingLayer = false;
-                dragLayerId = null;
+                layers = []; selectedLayerId = null; activeHandle = null; isDraggingLayer = false; dragLayerId = null;
                 document.getElementById('bgUpload').value = '';
                 document.getElementById('fgUpload').value = '';
                 document.getElementById('uploadedStatus').textContent = '';
-                bgOpacitySlider.value = 100;
-                fgOpacitySlider.value = 100;
-                bgOpacityValue.textContent = '100%';
-                fgOpacityValue.textContent = '100%';
-                isLocked = false;
-                lockToggleBtn.classList.remove('active');
+                bgOpacitySlider.value = 100; fgOpacitySlider.value = 100;
+                bgOpacityValue.textContent = '100%'; fgOpacityValue.textContent = '100%';
+                isLocked = false; lockToggleBtn.classList.remove('active');
                 lockToggleBtn.innerHTML = '<span class="lock-icon" id="lockIcon">🔓</span> 解锁图层';
                 canvasTip.textContent = '🔓 解锁图层后可直接拖拽图片调整位置';
                 updateCanvasDimensions(800, 600);
-                renderLayerList();
-                renderCanvas();
+                renderLayerList(); renderCanvas();
                 if (previewModal.classList.contains('active')) renderFullPreview();
             }
 
@@ -987,115 +807,83 @@
                     lockToggleBtn.innerHTML = '<span class="lock-icon" id="lockIcon">🔓</span> 解锁图层';
                     canvasTip.textContent = '🔓 拖拽画布中的图片可调整位置';
                 }
-                activeHandle = null;
-                isDraggingLayer = false;
-                dragLayerId = null;
+                activeHandle = null; isDraggingLayer = false; dragLayerId = null;
                 renderCanvas();
             });
 
-            // 预览
+            // 预览弹窗
             const openPreviewBtn = document.getElementById('openPreviewBtn');
             const closePreviewBtn = document.getElementById('closePreviewBtn');
             const downloadPreviewBtn = document.getElementById('downloadPreviewBtn');
             const copyPreviewBtn = document.getElementById('copyPreviewBtn');
 
-            function openPreview() {
-                renderFullPreview();
-                previewModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-            }
-            function closePreview() {
-                previewModal.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-            openPreviewBtn.addEventListener('click', openPreview);
-            closePreviewBtn.addEventListener('click', closePreview);
-            previewModal.addEventListener('click', (e) => { if (e.target === previewModal) closePreview(); });
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && previewModal.classList.contains('active')) closePreview();
-            });
+            openPreviewBtn.addEventListener('click', () => { renderFullPreview(); previewModal.classList.add('active'); });
+            closePreviewBtn.addEventListener('click', () => { previewModal.classList.remove('active'); });
+            previewModal.addEventListener('click', (e) => { if (e.target === previewModal) previewModal.classList.remove('active'); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && previewModal.classList.contains('active')) previewModal.classList.remove('active'); });
 
-            // 导出
             function createExportCanvas() {
                 const exportCanvas = document.createElement('canvas');
-                exportCanvas.width = CANVAS_W;
-                exportCanvas.height = CANVAS_H;
-                const exportCtx = exportCanvas.getContext('2d');
-                drawAllLayersToCtx(exportCtx, CANVAS_W, CANVAS_H, false);
+                exportCanvas.width = CANVAS_W; exportCanvas.height = CANVAS_H;
+                drawAllLayersToCtx(exportCanvas.getContext('2d'), CANVAS_W, CANVAS_H, false);
                 return exportCanvas;
             }
 
             downloadPreviewBtn.addEventListener('click', () => {
-                if (layers.length === 0) { alert('没有可导出的图层'); return; }
-                const exportCanvas = createExportCanvas();
+                if (layers.length === 0) return alert('没有可导出的图层');
                 const link = document.createElement('a');
                 link.download = `图层合成_${CANVAS_W}x${CANVAS_H}_${Date.now()}.png`;
-                link.href = exportCanvas.toDataURL('image/png');
+                link.href = createExportCanvas().toDataURL('image/png');
                 link.click();
             });
 
             copyPreviewBtn.addEventListener('click', async () => {
-                if (layers.length === 0) { alert('没有可复制的图层'); return; }
+                if (layers.length === 0) return alert('没有可复制的图层');
                 try {
-                    const exportCanvas = createExportCanvas();
-                    exportCanvas.toBlob(async (blob) => {
-                        if (!blob) { alert('生成图片失败'); return; }
-                        try {
-                            await navigator.clipboard.write([
-                                new ClipboardItem({ 'image/png': blob })
-                            ]);
-                            alert('✅ 图片已复制到剪贴板（含背景层）');
-                        } catch (err) {
-                            console.error('复制失败:', err);
-                            alert('自动复制失败，请尝试手动右键保存或使用下载按钮。');
-                        }
-                    }, 'image/png');
-                } catch (err) {
-                    console.error(err);
-                    alert('复制失败，请使用下载按钮。');
-                }
+                    const blob = await new Promise(r => createExportCanvas().toBlob(r, 'image/png'));
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    alert('✅ 图片已复制到剪贴板（含背景层）');
+                } catch (err) { alert('自动复制失败，请尝试使用下载按钮。'); }
             });
 
-            // 尺寸事件
+            // 尺寸应用事件
             document.getElementById('applySizeBtn').addEventListener('click', () => {
                 const w = parseInt(document.getElementById('canvasWidthInput').value, 10);
                 const h = parseInt(document.getElementById('canvasHeightInput').value, 10);
-                if (isNaN(w) || isNaN(h)) { alert('请输入有效的数字'); return; }
-                applyCanvasSize(w, h);
+                if (!isNaN(w) && !isNaN(h)) applyCanvasSize(w, h);
             });
             document.querySelectorAll('.preset-sizes button').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    const w = parseInt(btn.dataset.w, 10);
-                    const h = parseInt(btn.dataset.h, 10);
-                    if (!isNaN(w) && !isNaN(h)) {
-                        document.getElementById('canvasWidthInput').value = w;
-                        document.getElementById('canvasHeightInput').value = h;
-                        applyCanvasSize(w, h);
-                    }
+                    const w = parseInt(btn.dataset.w, 10), h = parseInt(btn.dataset.h, 10);
+                    document.getElementById('canvasWidthInput').value = w;
+                    document.getElementById('canvasHeightInput').value = h;
+                    applyCanvasSize(w, h);
                 });
             });
 
             // 初始化
-            function init() {
-                document.getElementById('bgUpload').addEventListener('change', async (e) => {
-                    const files = Array.from(e.target.files);
-                    if (files.length > 0) { try { await addImages(files, 'background'); } catch (err) { console.error(err); alert('背景图片加载失败'); } }
-                    e.target.value = '';
-                });
-                document.getElementById('fgUpload').addEventListener('change', async (e) => {
-                    const files = Array.from(e.target.files);
-                    if (files.length > 0) { try { await addImages(files, 'foreground'); } catch (err) { console.error(err); alert('前景图片加载失败'); } }
-                    e.target.value = '';
-                });
-                bgOpacitySlider.addEventListener('input', updateGlobalBgOpacity);
-                fgOpacitySlider.addEventListener('input', updateGlobalFgOpacity);
-                document.getElementById('resetBtn').addEventListener('click', resetAll);
-                renderLayerList();
-                renderCanvas();
-                document.addEventListener('dragover', (e) => e.preventDefault());
-                document.addEventListener('drop', (e) => e.preventDefault());
-            }
-            window.addEventListener('DOMContentLoaded', init);
+            bgOpacitySlider.addEventListener('input', updateGlobalBgOpacity);
+            fgOpacitySlider.addEventListener('input', updateGlobalFgOpacity);
+            document.getElementById('resetBtn').addEventListener('click', resetAll);
+            
+            // 上传事件
+            document.getElementById('bgUpload').addEventListener('change', async (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length) await addImages(files, 'background');
+                e.target.value = '';
+            });
+            document.getElementById('fgUpload').addEventListener('change', async (e) => {
+                const files = Array.from(e.target.files);
+                if (files.length) await addImages(files, 'foreground');
+                e.target.value = '';
+            });
+
+            renderLayerList(); 
+            renderCanvas();
+
+            // 防止浏览器默认拖拽图片行为
+            document.addEventListener('dragover', (e) => e.preventDefault());
+            document.addEventListener('drop', (e) => e.preventDefault());
         })();
     </script>
 </body>

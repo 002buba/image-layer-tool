@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图层工坊 · 独立透明度 · 箭头排序 · 滚轮缩放</title>
+    <title>图层工坊 · 微信级裁剪 · 独立透明度 · 旋转</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -130,7 +130,6 @@
         }
         .preset-sizes button:hover { background: #eff6ff; border-color: #3b82f6; color: #1e40af; }
         
-        /* 图层列表样式 */
         .layer-list {
             background: #f8fafc; border-radius: 1.4rem; padding: 1.2rem 1rem;
             border: 1px solid #e2e8f0; flex: 1; display: flex; flex-direction: column;
@@ -152,26 +151,16 @@
             margin-bottom: 0.5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.02);
             border: 2px solid transparent; transition: 0.15s; user-select: none;
         }
-        .layer-item.selected {
-            border-color: #3b82f6; background: #eff6ff;
-        }
-        .layer-item .layer-row {
-            display: flex; align-items: center; gap: 0.5rem;
-        }
-        /* 上下箭头样式 */
+        .layer-item.selected { border-color: #3b82f6; background: #eff6ff; }
+        .layer-item .layer-row { display: flex; align-items: center; gap: 0.5rem; }
         .layer-item .sort-btn {
             background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569;
             border-radius: 0.3rem; width: 24px; height: 24px;
             display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 0.75rem; transition: 0.15s;
-            flex-shrink: 0;
+            cursor: pointer; font-size: 0.75rem; transition: 0.15s; flex-shrink: 0;
         }
-        .layer-item .sort-btn:hover:not(:disabled) {
-            background: #e2e8f0; color: #0f172a; border-color: #94a3b8;
-        }
-        .layer-item .sort-btn:disabled {
-            opacity: 0.3; cursor: not-allowed;
-        }
+        .layer-item .sort-btn:hover:not(:disabled) { background: #e2e8f0; color: #0f172a; border-color: #94a3b8; }
+        .layer-item .sort-btn:disabled { opacity: 0.3; cursor: not-allowed; }
         .layer-item .layer-name {
             flex: 1; font-weight: 500; color: #0f172a; font-size: 0.85rem;
             display: flex; align-items: center; gap: 0.3rem;
@@ -181,9 +170,7 @@
             background: #e2e8f0; font-size: 0.6rem; padding: 0.1rem 0.4rem;
             border-radius: 99px; color: #334155; font-weight: 500; flex-shrink: 0;
         }
-        .layer-item .select-indicator {
-            width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0;
-        }
+        .layer-item .select-indicator { width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1; flex-shrink: 0; }
         .layer-item.selected .select-indicator { background: #3b82f6; }
         .layer-item .delete-btn {
             background: transparent; border: none; color: #94a3b8;
@@ -191,12 +178,20 @@
             display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; flex-shrink: 0;
         }
         .layer-item .delete-btn:hover { background: #fee2e2; color: #dc2626; }
-        .layer-opacity-row {
-            display: flex; align-items: center; gap: 0.5rem; padding-left: 1.2rem;
-        }
+        
+        .layer-opacity-row { display: flex; align-items: center; gap: 0.5rem; padding-left: 1.2rem; }
         .layer-opacity-row input[type="range"] { width: 100%; height: 4px; }
         .layer-opacity-row input[type="range"]::-webkit-slider-thumb { width: 14px; height: 14px; }
         .layer-opacity-row .opacity-value { font-size: 0.75rem; min-width: 38px; }
+        
+        .action-icon-btn {
+            background: #f1f5f9; border: 1px solid #cbd5e1; color: #475569;
+            border-radius: 0.4rem; padding: 0.2rem 0.5rem; font-size: 0.8rem;
+            cursor: pointer; transition: 0.15s; font-weight: bold; flex-shrink: 0;
+            display: flex; align-items: center; gap: 0.2rem;
+        }
+        .action-icon-btn:hover { background: #e2e8f0; color: #0f172a; border-color: #94a3b8; }
+        .action-icon-btn.crop-active { background: #ef4444; color: white; border-color: #dc2626; }
         
         .empty-layer-msg { text-align: center; color: #64748b; font-size: 0.9rem; padding: 1rem 0; }
         .reset-btn {
@@ -205,7 +200,6 @@
             font-size: 0.9rem; margin-top: 0.8rem; width: 100%; border: 1px solid #e2e8f0;
         }
         .reset-btn:hover { background: #e2e8f0; color: #0f172a; }
-        .note { font-size: 0.8rem; color: #64748b; text-align: center; margin-top: 0.5rem; }
 
         .preview-modal {
             display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.85);
@@ -229,7 +223,7 @@
 </head>
 <body>
     <div class="app">
-        <h1>🖼️ 图层工坊 <span>独立透明度 · 箭头排序 · 滚轮缩放</span></h1>
+        <h1>🖼️ 图层工坊 <span>微信级裁剪 · 独立透明度 · 旋转</span></h1>
         <div class="main-panel">
             <div class="canvas-area">
                 <div class="canvas-wrapper" id="canvasWrapper">
@@ -342,7 +336,13 @@
             let selectedLayerId = null;
             let isLocked = false;
 
-            const HANDLE_SIZE = 10;
+            // 裁剪模式相关状态
+            let isCropping = false;
+            let croppingLayerId = null;
+            let cropRect = { x: 0, y: 0, w: 0, h: 0 }; // 选区框（相对于图层的相对坐标）
+
+            // 缩放控制点
+            const HANDLE_SIZE = 8;
             let activeHandle = null;
             let handleStartX, handleStartY, handleStartW, handleStartH, handleStartLayerX, handleStartLayerY;
 
@@ -361,37 +361,99 @@
                     return;
                 }
 
-                // 按数组顺序绘制，数组[0]在最底层，数组末尾在最上层
                 for (const layer of layers) {
                     drawSingleLayer(targetCtx, layer, targetW, targetH);
                 }
 
+                // 绘制选中框与控制点
                 if (includeSelection && selectedLayerId && !isLocked) {
                     const sel = layers.find(l => l.id === selectedLayerId);
                     if (sel && sel.width) {
                         const scaleX = targetW / CANVAS_W;
                         const scaleY = targetH / CANVAS_H;
-                        const x = sel.x * scaleX;
-                        const y = sel.y * scaleY;
-                        const w = sel.width * scaleX;
-                        const h = sel.height * scaleY;
+                        
+                        const cx = (sel.x + sel.width / 2) * scaleX;
+                        const cy = (sel.y + sel.height / 2) * scaleY;
 
                         targetCtx.save();
-                        targetCtx.strokeStyle = '#3b82f6';
-                        targetCtx.lineWidth = 2;
-                        targetCtx.setLineDash([6, 6]);
-                        targetCtx.strokeRect(x, y, w, h);
-                        targetCtx.restore();
+                        targetCtx.translate(cx, cy);
+                        targetCtx.rotate(sel.rotation || 0);
+                        targetCtx.translate(-cx, -cy);
 
-                        if (sel.type === 'foreground') {
+                        const layerX = sel.x * scaleX;
+                        const layerY = sel.y * scaleY;
+                        const layerW = sel.width * scaleX;
+                        const layerH = sel.height * scaleY;
+
+                        if (isCropping && croppingLayerId === sel.id) {
+                            // 【微信模式裁剪UI】
+                            // 1. 画半透明黑底遮罩（全屏）
+                            targetCtx.fillStyle = 'rgba(0,0,0,0.5)';
+                            targetCtx.fillRect(layerX, layerY, layerW, layerH);
+
+                            // 2. 算出当前选区的绝对位置
+                            const cropX = layerX + (cropRect.x / sel.width) * layerW;
+                            const cropY = layerY + (cropRect.y / sel.height) * layerH;
+                            const cropW = (cropRect.w / sel.width) * layerW;
+                            const cropH = (cropRect.h / sel.height) * layerH;
+
+                            // 3. 使用 'destination-out' 擦除选区内的黑色遮罩，或者直接重绘原图
+                            // 这里采用更简单的方式：重置状态重新画一遍原图，只在选区内绘制
+                            targetCtx.restore();
+                            targetCtx.save();
+                            targetCtx.beginPath();
+                            targetCtx.rect(cropX, cropY, cropW, cropH);
+                            targetCtx.clip();
+                            targetCtx.translate(cx, cy);
+                            targetCtx.rotate(sel.rotation || 0);
+                            targetCtx.translate(-cx, -cy);
+                            drawSingleLayer(targetCtx, sel, targetW, targetH); // 重新绘制该图层，但只保留裁剪框内的部分
+
+                            // 4. 绘制选区边框和四角/四边控制点
+                            targetCtx.restore();
+                            targetCtx.save();
+                            targetCtx.translate(cx, cy);
+                            targetCtx.rotate(sel.rotation || 0);
+                            targetCtx.translate(-cx, -cy);
+
+                            targetCtx.strokeStyle = '#3b82f6';
+                            targetCtx.lineWidth = 2;
+                            targetCtx.setLineDash([]);
+                            targetCtx.strokeRect(cropX, cropY, cropW, cropH);
+
+                            // 绘制 8 个控制点
                             const handles = [
-                                { name: 'nw', cx: x, cy: y },
-                                { name: 'ne', cx: x + w, cy: y },
-                                { name: 'sw', cx: x, cy: y + h },
-                                { name: 'se', cx: x + w, cy: y + h }
+                                { name: 'nw', cx: cropX, cy: cropY }, { name: 'n', cx: cropX + cropW/2, cy: cropY },
+                                { name: 'ne', cx: cropX + cropW, cy: cropY }, { name: 'e', cx: cropX + cropW, cy: cropY + cropH/2 },
+                                { name: 'se', cx: cropX + cropW, cy: cropY + cropH }, { name: 's', cx: cropX + cropW/2, cy: cropY + cropH },
+                                { name: 'sw', cx: cropX, cy: cropY + cropH }, { name: 'w', cx: cropX, cy: cropY + cropH/2 }
                             ];
                             const handleScreenSize = HANDLE_SIZE * scaleX;
-                            targetCtx.save();
+                            targetCtx.fillStyle = 'white';
+                            targetCtx.strokeStyle = '#3b82f6';
+                            targetCtx.lineWidth = 2;
+                            for (const hd of handles) {
+                                targetCtx.beginPath();
+                                if (hd.name === 'n' || hd.name === 's' || hd.name === 'e' || hd.name === 'w') {
+                                    targetCtx.rect(hd.cx - handleScreenSize, hd.cy - handleScreenSize, handleScreenSize*2, handleScreenSize*2);
+                                } else {
+                                    targetCtx.arc(hd.cx, hd.cy, handleScreenSize, 0, 2 * Math.PI);
+                                }
+                                targetCtx.fill();
+                                targetCtx.stroke();
+                            }
+                        } else {
+                            // 普通模式选中框
+                            targetCtx.strokeStyle = '#3b82f6';
+                            targetCtx.lineWidth = 2;
+                            targetCtx.setLineDash([6, 6]);
+                            targetCtx.strokeRect(layerX, layerY, layerW, layerH);
+
+                            const handles = [
+                                { name: 'nw', cx: layerX, cy: layerY }, { name: 'ne', cx: layerX + layerW, cy: layerY },
+                                { name: 'sw', cx: layerX, cy: layerY + layerH }, { name: 'se', cx: layerX + layerW, cy: layerY + layerH }
+                            ];
+                            const handleScreenSize = HANDLE_SIZE * scaleX;
                             targetCtx.fillStyle = 'white';
                             targetCtx.strokeStyle = '#3b82f6';
                             targetCtx.lineWidth = 2;
@@ -401,8 +463,8 @@
                                 targetCtx.fill();
                                 targetCtx.stroke();
                             }
-                            targetCtx.restore();
                         }
+                        targetCtx.restore();
                     }
                 }
             }
@@ -413,10 +475,37 @@
                 targetCtx.globalAlpha = layer.opacity;
                 const scaleX = targetW / CANVAS_W;
                 const scaleY = targetH / CANVAS_H;
+                
                 if (layer.width && layer.height) {
-                    targetCtx.drawImage(layer.img,
-                        layer.x * scaleX, layer.y * scaleY,
-                        layer.width * scaleX, layer.height * scaleY);
+                    const x = layer.x * scaleX;
+                    const y = layer.y * scaleY;
+                    const w = layer.width * scaleX;
+                    const h = layer.height * scaleY;
+                    const cx = x + w / 2;
+                    const cy = y + h / 2;
+
+                    targetCtx.translate(cx, cy);
+                    targetCtx.rotate(layer.rotation || 0);
+                    targetCtx.translate(-cx, -cy);
+
+                    // 如果当前图层正在被裁剪中，使用预览裁剪框（即把原图完整画出来，因为外部有遮罩和选区限制）
+                    if (isCropping && croppingLayerId === layer.id) {
+                        targetCtx.drawImage(layer.img, x, y, w, h);
+                    } else {
+                        // 正常渲染（已应用裁剪参数 crop）
+                        const crop = layer.crop || { l: 0, t: 0, r: 1, b: 1 };
+                        const imgW = layer.img.width;
+                        const imgH = layer.img.height;
+                        
+                        const sx = imgW * crop.l;
+                        const sy = imgH * crop.t;
+                        const sW = imgW * (crop.r - crop.l);
+                        const sH = imgH * (crop.b - crop.t);
+
+                        if (sW > 0 && sH > 0) {
+                            targetCtx.drawImage(layer.img, sx, sy, sW, sH, x, y, w, h);
+                        }
+                    }
                 }
                 targetCtx.restore();
             }
@@ -429,67 +518,138 @@
                 const rect = canvas.getBoundingClientRect();
                 return { x: (e.clientX - rect.left) * (CANVAS_W / rect.width), y: (e.clientY - rect.top) * (CANVAS_H / rect.height) };
             }
+            
+            function isPointInLayer(px, py, layer) {
+                if (!layer || !layer.width) return false;
+                const cx = layer.x + layer.width / 2;
+                const cy = layer.y + layer.height / 2;
+                
+                const angle = -(layer.rotation || 0);
+                const dx = px - cx;
+                const dy = py - cy;
+                const rotatedX = cx + dx * Math.cos(angle) - dy * Math.sin(angle);
+                const rotatedY = cy + dx * Math.sin(angle) + dy * Math.cos(angle);
+
+                return rotatedX >= layer.x && rotatedX <= layer.x + layer.width &&
+                       rotatedY >= layer.y && rotatedY <= layer.y + layer.height;
+            }
+
             function hitTestHandle(px, py, layer) {
-                if (!layer || !layer.width || layer.type !== 'foreground') return null;
+                if (!layer || !layer.width) return null;
+                if (!isCropping && layer.type !== 'foreground') return null;
+
                 const scale = CANVAS_W / canvas.getBoundingClientRect().width;
                 const threshold = (HANDLE_SIZE + 4) * scale;
-                const x = layer.x, y = layer.y, w = layer.width, h = layer.height;
-                const handles = [
-                    { name: 'nw', cx: x, cy: y }, { name: 'ne', cx: x + w, cy: y },
-                    { name: 'sw', cx: x, cy: y + h }, { name: 'se', cx: x + w, cy: y + h }
-                ];
+                
+                const cx = layer.x + layer.width / 2;
+                const cy = layer.y + layer.height / 2;
+                const angle = -(layer.rotation || 0);
+                const dx = px - cx;
+                const dy = py - cy;
+                const rotatedX = cx + dx * Math.cos(angle) - dy * Math.sin(angle);
+                const rotatedY = cy + dx * Math.sin(angle) + dy * Math.cos(angle);
+
+                let handles = [];
+                if (isCropping && croppingLayerId === layer.id) {
+                    const cropX = layer.x + cropRect.x;
+                    const cropY = layer.y + cropRect.y;
+                    const cropW = cropRect.w;
+                    const cropH = cropRect.h;
+
+                    handles = [
+                        { name: 'nw', cx: cropX, cy: cropY }, { name: 'n', cx: cropX + cropW/2, cy: cropY },
+                        { name: 'ne', cx: cropX + cropW, cy: cropY }, { name: 'e', cx: cropX + cropW, cy: cropY + cropH/2 },
+                        { name: 'se', cx: cropX + cropW, cy: cropY + cropH }, { name: 's', cx: cropX + cropW/2, cy: cropY + cropH },
+                        { name: 'sw', cx: cropX, cy: cropY + cropH }, { name: 'w', cx: cropX, cy: cropY + cropH/2 }
+                    ];
+                } else {
+                    const x = layer.x, y = layer.y, w = layer.width, h = layer.height;
+                    handles = [
+                        { name: 'nw', cx: x, cy: y }, { name: 'ne', cx: x + w, cy: y },
+                        { name: 'sw', cx: x, cy: y + h }, { name: 'se', cx: x + w, cy: y + h }
+                    ];
+                }
+
                 for (const hd of handles) {
-                    if (Math.hypot(px - hd.cx, py - hd.cy) <= threshold) return hd.name;
+                    if (Math.hypot(rotatedX - hd.cx, rotatedY - hd.cy) <= threshold) return hd.name;
                 }
                 return null;
             }
+
             function getLayerAtPoint(px, py) {
                 for (let i = layers.length - 1; i >= 0; i--) {
-                    const layer = layers[i];
-                    if (layer.width && px >= layer.x && px <= layer.x + layer.width && py >= layer.y && py <= layer.y + layer.height) return layer;
+                    if (isPointInLayer(px, py, layers[i])) return layers[i];
                 }
                 return null;
             }
+
             function updateCursor(px, py) {
                 if (isLocked) { canvas.style.cursor = getLayerAtPoint(px, py) ? 'zoom-in' : 'default'; return; }
                 const sel = layers.find(l => l.id === selectedLayerId);
-                if (sel && sel.type === 'foreground') {
+                if (sel) {
                     const handle = hitTestHandle(px, py, sel);
-                    if (handle) { canvas.style.cursor = (handle === 'nw' || handle === 'se') ? 'nwse-resize' : 'nesw-resize'; return; }
+                    if (handle) {
+                        if (isCropping) {
+                            if (handle === 'nw' || handle === 'se') canvas.style.cursor = 'nwse-resize';
+                            else if (handle === 'ne' || handle === 'sw') canvas.style.cursor = 'nesw-resize';
+                            else if (handle === 'n' || handle === 's') canvas.style.cursor = 'ns-resize';
+                            else if (handle === 'e' || handle === 'w') canvas.style.cursor = 'ew-resize';
+                        } else {
+                            if (handle === 'nw' || handle === 'se') canvas.style.cursor = 'nwse-resize';
+                            else canvas.style.cursor = 'nesw-resize';
+                        }
+                        return;
+                    }
                 }
                 canvas.style.cursor = getLayerAtPoint(px, py) ? 'grab' : 'default';
             }
 
-            // ---------- 画布拖拽与缩放 ----------
+            // ---------- 画布交互 ----------
             let isDraggingLayer = false;
             let dragStartX, dragStartY, dragStartLayerX, dragStartLayerY, dragLayerId = null;
 
             canvas.addEventListener('mousedown', (e) => {
                 if (isLocked) return;
                 const pos = getCanvasMousePos(e);
+                
                 if (selectedLayerId) {
                     const sel = layers.find(l => l.id === selectedLayerId);
-                    if (sel && sel.type === 'foreground') {
+                    if (sel) {
                         const handle = hitTestHandle(pos.x, pos.y, sel);
                         if (handle) {
                             activeHandle = handle;
                             handleStartX = pos.x; handleStartY = pos.y;
-                            handleStartW = sel.width; handleStartH = sel.height;
-                            handleStartLayerX = sel.x; handleStartLayerY = sel.y;
-                            sel._startAspect = sel.width / sel.height;
+                            if (isCropping && croppingLayerId === sel.id) {
+                                // 记录裁剪框起始状态
+                                handleStartCrop = { ...cropRect };
+                            } else {
+                                // 记录缩放起始状态
+                                handleStartW = sel.width; handleStartH = sel.height;
+                                handleStartLayerX = sel.x; handleStartLayerY = sel.y;
+                                sel._startAspect = sel.width / sel.height;
+                            }
                             return;
                         }
                     }
                 }
+                
                 const layer = getLayerAtPoint(pos.x, pos.y);
                 if (layer) {
-                    selectedLayerId = layer.id; renderLayerList(); renderCanvas();
+                    selectedLayerId = layer.id; 
+                    if (croppingLayerId && croppingLayerId !== layer.id) {
+                        isCropping = false;
+                        croppingLayerId = null;
+                    }
+                    renderLayerList(); renderCanvas();
                     isDraggingLayer = true; dragLayerId = layer.id;
                     dragStartX = pos.x; dragStartY = pos.y;
                     dragStartLayerX = layer.x; dragStartLayerY = layer.y;
                     canvas.style.cursor = 'grabbing';
                 } else {
-                    selectedLayerId = null; renderLayerList(); renderCanvas();
+                    selectedLayerId = null; 
+                    isCropping = false;
+                    croppingLayerId = null;
+                    renderLayerList(); renderCanvas();
                 }
             });
 
@@ -498,25 +658,73 @@
                 if (activeHandle && !isLocked) {
                     const layer = layers.find(l => l.id === selectedLayerId);
                     if (!layer) return;
-                    const dx = pos.x - handleStartX, dy = pos.y - handleStartY;
-                    const aspect = layer._startAspect || (handleStartW / handleStartH);
-                    let newW, newH, newX, newY;
-                    if (activeHandle === 'se') {
-                        newW = Math.max(30, handleStartW + dx); newH = newW / aspect;
-                        newX = handleStartLayerX; newY = handleStartLayerY;
-                    } else if (activeHandle === 'nw') {
-                        newW = Math.max(30, handleStartW - dx); newH = newW / aspect;
-                        newX = handleStartLayerX + handleStartW - newW; newY = handleStartLayerY + handleStartH - newH;
-                    } else if (activeHandle === 'ne') {
-                        newW = Math.max(30, handleStartW + dx); newH = newW / aspect;
-                        newX = handleStartLayerX; newY = handleStartLayerY + handleStartH - newH;
-                    } else if (activeHandle === 'sw') {
-                        newW = Math.max(30, handleStartW - dx); newH = newW / aspect;
-                        newX = handleStartLayerX + handleStartW - newW; newY = handleStartLayerY;
+                    
+                    const cx = layer.x + layer.width / 2;
+                    const cy = layer.y + layer.height / 2;
+                    const angle = -(layer.rotation || 0);
+                    
+                    const dxRaw = pos.x - handleStartX;
+                    const dyRaw = pos.y - handleStartY;
+                    const dx = dxRaw * Math.cos(angle) - dyRaw * Math.sin(angle);
+                    const dy = dxRaw * Math.sin(angle) + dyRaw * Math.cos(angle);
+
+                    if (isCropping && croppingLayerId === layer.id) {
+                        // 【核心：微信模式裁剪框拖拽】
+                        const crop = { ...handleStartCrop };
+                        const minW = 20; // 最小宽度
+                        const minH = 20; // 最小高度
+                        const maxW = layer.width;
+                        const maxH = layer.height;
+
+                        if (activeHandle.includes('w')) {
+                            const newW = Math.min(maxW, Math.max(minW, crop.w - dx));
+                            crop.x = crop.x + (crop.w - newW);
+                            crop.w = newW;
+                        }
+                        if (activeHandle.includes('e')) {
+                            const newW = Math.min(maxW - crop.x, Math.max(minW, crop.w + dx));
+                            crop.w = newW;
+                        }
+                        if (activeHandle.includes('n')) {
+                            const newH = Math.min(maxH, Math.max(minH, crop.h - dy));
+                            crop.y = crop.y + (crop.h - newH);
+                            crop.h = newH;
+                        }
+                        if (activeHandle.includes('s')) {
+                            const newH = Math.min(maxH - crop.y, Math.max(minH, crop.h + dy));
+                            crop.h = newH;
+                        }
+
+                        // 边界限制
+                        if (crop.x < 0) { crop.w += crop.x; crop.x = 0; }
+                        if (crop.y < 0) { crop.h += crop.y; crop.y = 0; }
+                        if (crop.x + crop.w > layer.width) crop.w = layer.width - crop.x;
+                        if (crop.y + crop.h > layer.height) crop.h = layer.height - crop.y;
+
+                        cropRect = crop;
+                        renderCanvas();
+                        return;
+                    } else if (!isCropping) {
+                        // 普通缩放
+                        const aspect = layer._startAspect || (handleStartW / handleStartH);
+                        let newW, newH, newX, newY;
+                        if (activeHandle === 'se') {
+                            newW = Math.max(30, handleStartW + dx); newH = newW / aspect;
+                            newX = handleStartLayerX; newY = handleStartLayerY;
+                        } else if (activeHandle === 'nw') {
+                            newW = Math.max(30, handleStartW - dx); newH = newW / aspect;
+                            newX = handleStartLayerX + handleStartW - newW; newY = handleStartLayerY + handleStartH - newH;
+                        } else if (activeHandle === 'ne') {
+                            newW = Math.max(30, handleStartW + dx); newH = newW / aspect;
+                            newX = handleStartLayerX; newY = handleStartLayerY + handleStartH - newH;
+                        } else if (activeHandle === 'sw') {
+                            newW = Math.max(30, handleStartW - dx); newH = newW / aspect;
+                            newX = handleStartLayerX + handleStartW - newW; newY = handleStartLayerY;
+                        }
+                        layer.width = newW; layer.height = newH; layer.x = newX; layer.y = newY;
+                        renderCanvas();
+                        return;
                     }
-                    layer.width = newW; layer.height = newH; layer.x = newX; layer.y = newY;
-                    renderCanvas();
-                    return;
                 }
                 if (isDraggingLayer && dragLayerId && !isLocked) {
                     const layer = layers.find(l => l.id === dragLayerId);
@@ -538,9 +746,10 @@
             canvas.addEventListener('mouseup', handleMouseUp);
             canvas.addEventListener('mouseleave', handleMouseUp);
 
-            // 滚轮缩放（点击前景选中后生效）
+            // 滚轮缩放
             canvas.addEventListener('wheel', (e) => {
                 e.preventDefault();
+                if (isCropping) return;
                 const pos = getCanvasMousePos(e);
                 const layer = getLayerAtPoint(pos.x, pos.y);
                 if (!layer || layer.type !== 'foreground') return;
@@ -557,8 +766,11 @@
                 if (newW > maxSize) { newW = maxSize; newH = newW / aspect; }
                 else if (newH > maxSize) { newH = maxSize; newW = newH * aspect; }
 
-                const centerX = layer.x + layer.width / 2, centerY = layer.y + layer.height / 2;
-                const offsetX = pos.x - centerX, offsetY = pos.y - centerY;
+                const cx = layer.x + layer.width / 2;
+                const cy = layer.y + layer.height / 2;
+                const offsetX = pos.x - cx;
+                const offsetY = pos.y - cy;
+                
                 layer.x = pos.x - offsetX * (newW / layer.width) - newW / 2;
                 layer.y = pos.y - offsetY * (newH / layer.height) - newH / 2;
                 layer.width = newW; layer.height = newH;
@@ -567,41 +779,95 @@
                 if (previewModal.classList.contains('active')) renderFullPreview();
             }, { passive: false });
 
-            // ---------- 删除图层 ----------
+            // ---------- 图层列表操作 ----------
             function deleteLayer(layerId) {
                 const index = layers.findIndex(l => l.id === layerId);
                 if (index === -1) return;
                 layers.splice(index, 1);
-                if (selectedLayerId === layerId) selectedLayerId = null;
+                if (selectedLayerId === layerId) {
+                    selectedLayerId = null;
+                    isCropping = false;
+                    croppingLayerId = null;
+                }
                 renderLayerList(); renderCanvas();
                 if (previewModal.classList.contains('active')) renderFullPreview();
                 document.getElementById('uploadedStatus').textContent = layers.length === 0 ? '' : `当前共 ${layers.length} 个图层`;
             }
 
-            // ======================= 箭头排序核心逻辑 =======================
-            // 在UI中，列表是从上到下显示的（对应数组从后到前）
-            // 点击“向上箭头”意味着在UI中往上移（在数组中往末尾移）
             function moveLayerUp(layerId) {
                 const idx = layers.findIndex(l => l.id === layerId);
-                // 如果已经在数组末尾（UI最顶层），则不能继续往上
                 if (idx === -1 || idx === layers.length - 1) return; 
-                // 与后一个元素交换位置
                 [layers[idx], layers[idx + 1]] = [layers[idx + 1], layers[idx]];
                 renderLayerList(); renderCanvas();
                 if (previewModal.classList.contains('active')) renderFullPreview();
             }
 
-            // 点击“向下箭头”意味着在UI中往下移（在数组中往开头移）
             function moveLayerDown(layerId) {
                 const idx = layers.findIndex(l => l.id === layerId);
-                // 如果已经在数组开头（UI最底层），则不能继续往下
                 if (idx === -1 || idx === 0) return;
-                // 与前一个元素交换位置
                 [layers[idx], layers[idx - 1]] = [layers[idx - 1], layers[idx]];
                 renderLayerList(); renderCanvas();
                 if (previewModal.classList.contains('active')) renderFullPreview();
             }
-            // ===============================================================
+
+            function rotateLayer(layerId) {
+                const layer = layers.find(l => l.id === layerId);
+                if (!layer) return;
+                layer.rotation = (layer.rotation || 0) + (15 * Math.PI / 180);
+                renderCanvas();
+                if (previewModal.classList.contains('active')) renderFullPreview();
+            }
+
+            function toggleCropMode(layerId) {
+                const layer = layers.find(l => l.id === layerId);
+                if (!layer) return;
+
+                if (isCropping && croppingLayerId === layerId) {
+                    // 【确认裁剪】
+                    // 将 cropRect (像素相对位置) 转换为比例，存入 layer.crop
+                    if (cropRect.w > 0 && cropRect.h > 0) {
+                        const ratioL = cropRect.x / layer.width;
+                        const ratioT = cropRect.y / layer.height;
+                        const ratioR = (cropRect.x + cropRect.w) / layer.width;
+                        const ratioB = (cropRect.y + cropRect.h) / layer.height;
+                        
+                        // 如果之前有裁剪过，需要乘上之前的裁剪比例（因为这时候预览用的是原图）
+                        const oldCrop = layer.crop || { l: 0, t: 0, r: 1, b: 1 };
+                        const oldW = oldCrop.r - oldCrop.l;
+                        const oldH = oldCrop.b - oldCrop.t;
+
+                        layer.crop = {
+                            l: oldCrop.l + ratioL * oldW,
+                            t: oldCrop.t + ratioT * oldH,
+                            r: oldCrop.l + ratioR * oldW,
+                            b: oldCrop.t + ratioB * oldH
+                        };
+
+                        // 裁剪后，图层实际显示的宽高应变为裁剪框的大小
+                        // （注意：这里我们不改变外框，而是通过内部视口改变，外框宽高在渲染时会自动缩放，这就相当于裁掉了）
+                        // 为了不拉伸，内部视口宽高变了，外框也要跟着变
+                        const cropPixelW = layer.width * (ratioR - ratioL);
+                        const cropPixelH = layer.height * (ratioB - ratioT);
+                        
+                        layer.x = layer.x + cropRect.x;
+                        layer.y = layer.y + cropRect.y;
+                        layer.width = cropPixelW;
+                        layer.height = cropPixelH;
+                    }
+
+                    isCropping = false;
+                    croppingLayerId = null;
+                } else {
+                    // 【进入裁剪】
+                    isCropping = true;
+                    croppingLayerId = layerId;
+                    selectedLayerId = layerId;
+                    // 初始化裁剪框（默认整个图片）
+                    cropRect = { x: 0, y: 0, w: layer.width, h: layer.height };
+                }
+                renderLayerList();
+                renderCanvas();
+            }
 
             // ---------- 图层列表渲染 ----------
             function renderLayerList() {
@@ -612,20 +878,20 @@
                     return;
                 }
                 
-                // 反转数组用于UI显示，数组的最后一个元素（顶层）显示在最上面
                 const reversed = [...layers].reverse();
                 let html = '';
-                reversed.forEach((layer, index) => {
+                reversed.forEach((layer) => {
                     const typeIcon = layer.type === 'background' ? '🌄' : '🧑';
                     const typeName = layer.type === 'background' ? '背景' : '前景';
                     const opacityPercent = Math.round(layer.opacity * 100);
                     const isSelected = layer.id === selectedLayerId ? 'selected' : '';
                     
-                    // 判断是否在边缘，以禁用对应的箭头
-                    // 在数组中的真实索引
                     const realIndex = layers.findIndex(l => l.id === layer.id);
                     const isTop = realIndex === layers.length - 1;
                     const isBottom = realIndex === 0;
+
+                    const cropActiveClass = (isCropping && croppingLayerId === layer.id) ? 'crop-active' : '';
+                    const cropBtnText = (isCropping && croppingLayerId === layer.id) ? '✂️ 完成' : '✂️ 裁剪';
 
                     html += `
                         <div class="layer-item ${isSelected}" data-layer-id="${layer.id}">
@@ -645,46 +911,50 @@
                                 <span style="font-size:0.7rem;color:#64748b;">透明</span>
                                 <input type="range" class="layer-opacity-slider" data-opacity-id="${layer.id}" min="0" max="100" value="${opacityPercent}" step="1">
                                 <span class="opacity-value" id="opacity-label-${layer.id}">${opacityPercent}%</span>
+                                <button class="action-icon-btn ${cropActiveClass}" data-crop-id="${layer.id}" title="裁剪图片">${cropBtnText}</button>
+                                <button class="action-icon-btn" data-rotate-id="${layer.id}" title="顺时针旋转15度">↻ 15°</button>
                             </div>
                         </div>
                     `;
                 });
                 container.innerHTML = html;
 
-                // 绑定点击选中
                 document.querySelectorAll('.layer-item').forEach(item => {
                     item.addEventListener('click', (e) => {
-                        if (e.target.closest('.delete-btn') || e.target.closest('.sort-btn') || e.target.closest('.layer-opacity-slider') || e.target.closest('.layer-opacity-row')) return;
+                        if (e.target.closest('button') || e.target.closest('.layer-opacity-row') || e.target.closest('.layer-row')) {
+                            if(e.target === item) {
+                                selectedLayerId = item.dataset.layerId;
+                                if (croppingLayerId && croppingLayerId !== selectedLayerId) {
+                                    isCropping = false; croppingLayerId = null;
+                                }
+                                renderLayerList(); renderCanvas();
+                            }
+                            return;
+                        }
                         selectedLayerId = item.dataset.layerId;
+                        if (croppingLayerId && croppingLayerId !== selectedLayerId) {
+                            isCropping = false; croppingLayerId = null;
+                        }
                         renderLayerList(); renderCanvas();
                     });
                 });
 
-                // 绑定删除按钮
                 document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => { 
-                        e.stopPropagation(); 
-                        deleteLayer(btn.dataset.deleteId); 
-                    });
+                    btn.addEventListener('click', (e) => { e.stopPropagation(); deleteLayer(btn.dataset.deleteId); });
                 });
-
-                // 绑定上移按钮
                 document.querySelectorAll('.btn-up').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        moveLayerUp(btn.dataset.moveUp);
-                    });
+                    btn.addEventListener('click', (e) => { e.stopPropagation(); moveLayerUp(btn.dataset.moveUp); });
                 });
-
-                // 绑定下移按钮
                 document.querySelectorAll('.btn-down').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        moveLayerDown(btn.dataset.moveDown);
-                    });
+                    btn.addEventListener('click', (e) => { e.stopPropagation(); moveLayerDown(btn.dataset.moveDown); });
+                });
+                document.querySelectorAll('.action-icon-btn[data-rotate-id]').forEach(btn => {
+                    btn.addEventListener('click', (e) => { e.stopPropagation(); rotateLayer(btn.dataset.rotateId); });
+                });
+                document.querySelectorAll('.action-icon-btn[data-crop-id]').forEach(btn => {
+                    btn.addEventListener('click', (e) => { e.stopPropagation(); toggleCropMode(btn.dataset.cropId); });
                 });
 
-                // 绑定独立透明度滑块
                 document.querySelectorAll('.layer-opacity-slider').forEach(slider => {
                     slider.addEventListener('input', (e) => {
                         e.stopPropagation();
@@ -703,7 +973,7 @@
                 });
             }
 
-            // 全局透明度调整
+            // ---------- 其他功能 ----------
             function updateGlobalBgOpacity() {
                 const val = parseInt(bgOpacitySlider.value, 10) / 100;
                 bgOpacityValue.textContent = `${Math.round(val*100)}%`;
@@ -719,7 +989,6 @@
                 if (previewModal.classList.contains('active')) renderFullPreview();
             }
 
-            // 添加图片
             async function addImages(files, type) {
                 for (const file of files) {
                     await new Promise((resolve, reject) => {
@@ -742,6 +1011,8 @@
                                     id: `layer-${layerIdCounter++}`, type, img, name: layerName,
                                     opacity: type === 'background' ? parseInt(bgOpacitySlider.value,10)/100 : parseInt(fgOpacitySlider.value,10)/100,
                                     x: offsetX, y: offsetY, width: drawW, height: drawH,
+                                    rotation: 0,
+                                    crop: { l: 0, t: 0, r: 1, b: 1 }
                                 };
                                 if (type === 'background') layers.unshift(newLayer);
                                 else layers.push(newLayer);
@@ -760,7 +1031,6 @@
                 document.getElementById('uploadedStatus').textContent = `当前共 ${layers.length} 个图层`;
             }
 
-            // 应用画布尺寸
             function applyCanvasSize(newW, newH) {
                 if (newW < 100 || newH < 100) { alert('画布尺寸不能小于 100×100'); return; }
                 if (newW > 4000 || newH > 4000) { alert('画布尺寸不能大于 4000×4000'); return; }
@@ -778,9 +1048,9 @@
                 if (previewModal.classList.contains('active')) renderFullPreview();
             }
 
-            // 重置
             function resetAll() {
                 layers = []; selectedLayerId = null; activeHandle = null; isDraggingLayer = false; dragLayerId = null;
+                isCropping = false; croppingLayerId = null;
                 document.getElementById('bgUpload').value = '';
                 document.getElementById('fgUpload').value = '';
                 document.getElementById('uploadedStatus').textContent = '';
@@ -794,7 +1064,6 @@
                 if (previewModal.classList.contains('active')) renderFullPreview();
             }
 
-            // 锁定切换
             lockToggleBtn.addEventListener('click', () => {
                 isLocked = !isLocked;
                 if (isLocked) {
@@ -802,6 +1071,8 @@
                     lockToggleBtn.innerHTML = '<span class="lock-icon" id="lockIcon">🔒</span> 已锁定';
                     canvasTip.textContent = '🔒 已锁定，滚轮可缩放前景图片';
                     canvas.style.cursor = 'default';
+                    isCropping = false;
+                    croppingLayerId = null;
                 } else {
                     lockToggleBtn.classList.remove('active');
                     lockToggleBtn.innerHTML = '<span class="lock-icon" id="lockIcon">🔓</span> 解锁图层';
@@ -811,7 +1082,6 @@
                 renderCanvas();
             });
 
-            // 预览弹窗
             const openPreviewBtn = document.getElementById('openPreviewBtn');
             const closePreviewBtn = document.getElementById('closePreviewBtn');
             const downloadPreviewBtn = document.getElementById('downloadPreviewBtn');
@@ -846,7 +1116,6 @@
                 } catch (err) { alert('自动复制失败，请尝试使用下载按钮。'); }
             });
 
-            // 尺寸应用事件
             document.getElementById('applySizeBtn').addEventListener('click', () => {
                 const w = parseInt(document.getElementById('canvasWidthInput').value, 10);
                 const h = parseInt(document.getElementById('canvasHeightInput').value, 10);
@@ -861,12 +1130,10 @@
                 });
             });
 
-            // 初始化
             bgOpacitySlider.addEventListener('input', updateGlobalBgOpacity);
             fgOpacitySlider.addEventListener('input', updateGlobalFgOpacity);
             document.getElementById('resetBtn').addEventListener('click', resetAll);
             
-            // 上传事件
             document.getElementById('bgUpload').addEventListener('change', async (e) => {
                 const files = Array.from(e.target.files);
                 if (files.length) await addImages(files, 'background');
@@ -881,7 +1148,6 @@
             renderLayerList(); 
             renderCanvas();
 
-            // 防止浏览器默认拖拽图片行为
             document.addEventListener('dragover', (e) => e.preventDefault());
             document.addEventListener('drop', (e) => e.preventDefault());
         })();
